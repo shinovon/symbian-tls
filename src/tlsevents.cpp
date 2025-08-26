@@ -635,27 +635,27 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 			);
 		}
 #ifndef NO_VERIFY
-		if (iBio.iTlsConnection.iDialogMode == EDialogModeAttended) {
-			res = iMbedContext.Verify();
-			LOG(Log::Printf(_L("Verify result: %d"), res));
-			if (res == 0) {
-				// verify successful, do nothing
-			} else if (res == -1u || len == -1) {
-				// mbedtls returned fatal error
-				ret = KErrSSLInvalidCert;
-			} else if (iMbedContext.Hostname() == NULL) {
-				// no hostname set??
-				ret = KErrSSLInvalidCert;
-			} else if (!supportedCert) {
-				// TODO: custom security dialog?
-				ret = KErrSSLInvalidCert;
-			} else {
-				iInDialog = ETrue;
-				iSecurityDialog = SecurityDialogFactory::CreateL();
-				iSecurityDialog->ServerAuthenticationFailure(TPtrC8(iMbedContext.Hostname()), ENotCACert, TPtrC8(data, len), aStatus);
-				if (data) User::Free(data); // i hope that function called above copies it
-				return this;
-			}
+		res = iMbedContext.Verify();
+		LOG(Log::Printf(_L("Verify result: %d"), res));
+		if (res == 0) {
+			// verify successful, do nothing
+		} else if (res == -1u || len == -1) {
+			// mbedtls returned fatal error
+			ret = KErrSSLInvalidCert;
+		} else if (iMbedContext.Hostname() == NULL) {
+			// no hostname set??
+			ret = KErrSSLInvalidCert;
+		} else if (iBio.iTlsConnection.iDialogMode == EDialogModeUnattended) {
+			ret = KErrSSLInvalidCert;
+		} else if (!supportedCert) {
+			// TODO: custom security dialog?
+			ret = KErrSSLInvalidCert;
+		} else {
+			iInDialog = ETrue;
+			iSecurityDialog = SecurityDialogFactory::CreateL();
+			iSecurityDialog->ServerAuthenticationFailure(TPtrC8(iMbedContext.Hostname()), ENotCACert, TPtrC8(data, len), aStatus);
+			if (data) User::Free(data); // i hope that function called above copies it
+			return this;
 		}
 #endif
 		if (data) User::Free(data);
