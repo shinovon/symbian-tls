@@ -2,7 +2,7 @@ TARGET        ssl_stl.dll
 
 #include "newtls.mmh"
 
-LIBRARY mbedtls_stl.lib
+LIBRARY mbedtls_stlib.lib
 LIBRARY estlib.lib
 
 SYSTEMINCLUDE		/epoc32/include/libc
