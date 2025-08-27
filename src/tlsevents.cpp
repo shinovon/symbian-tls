@@ -630,6 +630,10 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 		TBool supportedCert = EFalse;
 		if (len != -1) {
 			TRAP_IGNORE(
+				if (iBio.iTlsConnection.iServerCert) {
+					delete iBio.iTlsConnection.iServerCert;
+					iBio.iTlsConnection.iServerCert = NULL;
+				}
 				iBio.iTlsConnection.iServerCert = CX509Certificate::NewL(TPtrC8(data, len));
 				supportedCert = ETrue;
 			);

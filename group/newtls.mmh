@@ -49,3 +49,7 @@ UNPAGED
 
 LINKAS ssl.dll
 DEFFILE ssl.def
+
+#ifdef ARMCC_4_0
+ARMFPU softvfp
+#endif
