@@ -7,7 +7,6 @@
 #include "mbedcontext.h"
 #include "LOGFILE.h"
 #include "tlsconnection.h"
-#include "es_sock.h"
 
 // callbacks for mbedtls
 
@@ -33,7 +32,14 @@ LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 	const TPtrC8 des((const TUint8*) buf, len);
 	
 	TRequestStatus stat;
-	s->iSocket.Send(des, 0, stat);
+#ifdef USE_GENERIC_SOCKET
+	if (s->iIsGenericSocket) {
+		s->iGenericSocket.Send(des, 0, stat);
+	} else
+#endif
+	{
+		s->iSocket.Send(des, 0, stat);
+	}
 	User::WaitForRequest(stat);
 	
 	TInt ret = stat.Int() != KErrNone ? stat.Int() : len;
@@ -56,19 +62,28 @@ LOCAL_C int recv_callback(void *ctx, unsigned char *buf, size_t len)
 		}
 		des.Copy(s->iPtrHBuf);
 		s->iReadState = 0;
+		LOG(Log::Printf(_L("-recv_callback %d"), s->iPtrHBuf.Length()));
 		return s->iPtrHBuf.Length();
 	}
 	
 	if (s->iReadState == 0) {
 		s->iReadLength = (TInt) len;
 		s->iReadState = 2;
+		LOG(Log::Printf(_L("-recv_callback WANT_READ %d"), len));
 		return MBEDTLS_ERR_SSL_WANT_READ;
 	}
 	
 	s->iReadLength = -1;
 	
 	TRequestStatus stat;
-	s->iSocket.Recv(des, 0, stat);
+#ifdef USE_GENERIC_SOCKET
+	if (s->iIsGenericSocket) {
+		s->iGenericSocket.Recv(des, 0, stat);
+	} else
+#endif
+	{
+		s->iSocket.RecvOneOrMore(des, 0, stat, s->iRecvLen);
+	}
 	User::WaitForRequest(stat);
 	
 	TInt ret = stat.Int() != KErrNone ? stat.Int() : des.Length();
@@ -90,7 +105,11 @@ CBio* CBio::NewL(CTlsConnection& aTlsConnection)
 
 CBio::CBio(CTlsConnection& aTlsConnection) :
   iTlsConnection(aTlsConnection),
-  iSocket(aTlsConnection.Socket()),
+#ifdef USE_GENERIC_SOCKET
+  iGenericSocket(*aTlsConnection.iGenericSocket),
+  iIsGenericSocket(aTlsConnection.iIsGenericSocket),
+#endif
+  iSocket(*aTlsConnection.iSocket),
   iPtrHBuf(0, 0),
   iReadState(0),
   iReadLength(-1),
@@ -138,7 +157,15 @@ void CBio::Recv(TRequestStatus& aStatus)
 		}
 	}
 	iPtrHBuf.Set((TUint8*)iDataIn->Des().Ptr(), 0, len);
-	iSocket.Recv(iPtrHBuf, 0, aStatus);
+#ifdef USE_GENERIC_SOCKET
+	if (iIsGenericSocket) {
+		iGenericSocket.Recv(iPtrHBuf, 0, aStatus);
+	} else
+#endif
+	{
+		iSocket.RecvOneOrMore(iPtrHBuf, 0, aStatus, iRecvLen);
+	}
+
 	iReadState = 1;
 	iReadLength = -1;
 	LOG(Log::Printf(_L("-CBio::Recv")));
@@ -154,8 +181,14 @@ void CBio::Send(TRequestStatus& aStatus)
 	}
 //	LOG(Log::Printf(_L("Send data")));
 	const TPtrC8 des((const TUint8*) iWritePtr, iWriteLength);
-	
-	iSocket.Send(des, 0, aStatus);
+#ifdef USE_GENERIC_SOCKET
+	if (iIsGenericSocket) {
+		iGenericSocket.Send(des, 0, aStatus);
+	} else
+#endif
+	{
+		iSocket.Send(des, 0, aStatus);
+	}
 	iWriteState = 1;
 	iWritePtr = NULL;
 }

@@ -132,11 +132,6 @@ public:
 	CRecvEvent& RecvEvent();
 	CSendEvent& SendEvent();
 	CHandshakeEvent& HandshakeEvent();
-#ifdef USE_GENERIC_SOCKET
-	MGenericSecureSocket& Socket();
-#else
-	RSocket& Socket();
-#endif
 		
 
 	// Methods from CActive
@@ -157,11 +152,10 @@ public:
 	CX509Certificate* iClientCert;
 	CX509Certificate* iServerCert;
 #ifdef USE_GENERIC_SOCKET
-	CGenericSecureSocket<RSocket>* iGenericSocket; // owned
-	MGenericSecureSocket* iSocket;
-#else
-	RSocket* iSocket;
+	MGenericSecureSocket* iGenericSocket;
+	TBool iIsGenericSocket;
 #endif
+	RSocket* iSocket;
 	CMbedContext* iMbedContext;
 	
 	CBio* iBio;
@@ -203,17 +197,6 @@ inline CSendEvent& CTlsConnection::SendEvent()
 inline CHandshakeEvent& CTlsConnection::HandshakeEvent()
 {
 	return *iHandshakeEvent;
-}
-
-inline
-#ifdef USE_GENERIC_SOCKET
-	MGenericSecureSocket&
-#else
-	RSocket&
-#endif
-	CTlsConnection::Socket()
-{
-	return *iSocket;
 }
 
 inline TBool CTlsConnection::Busy()

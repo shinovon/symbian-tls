@@ -1,6 +1,6 @@
 &EN
 
-#{"SSL"},(0x20292B6C),1,0,15, TYPE=SA, RU
+#{"SSL"},(0x20292B6C),1,0,16, TYPE=SA, RU
 
 [0x101F7961], 0, 0, 0, {"S60ProductID"}
 [0x1028315F], 0, 0, 0, {"S60ProductID"}

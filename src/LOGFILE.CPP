@@ -39,7 +39,7 @@ void Log::Printf(TRefByValue<const TDesC> aFmt, ...)
     //coverity[uninit_use_in_call];
     buf.FormatList(aFmt, list);
 	Write(buf);
-	RDebug::RawPrint(buf);
+	//RDebug::RawPrint(buf);
 	}
 
 

@@ -8,6 +8,7 @@
 
 #include "statemachine.h"
 #include "asynchevent.h"
+#include "es_sock.h"
 #ifndef NO_VERIFY
 #include <secdlg.h>
 #endif
@@ -41,10 +42,10 @@ protected:
 public:
 	CTlsConnection& iTlsConnection;
 #ifdef USE_GENERIC_SOCKET
-	MGenericSecureSocket& iSocket;
-#else
-	RSocket& iSocket;
+	MGenericSecureSocket& iGenericSocket;
+	TBool iIsGenericSocket;
 #endif
+	RSocket& iSocket;
 	
 	TPtr8 iPtrHBuf;
 	TInt iReadState;
@@ -53,6 +54,7 @@ public:
 	const TUint8* iWritePtr;
 	TInt iWriteState;
 	TInt iWriteLength;
+	TSockXfrLength iRecvLen;
 	
 };
 

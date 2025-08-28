@@ -36,7 +36,7 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
  * @return A pointer to a newly created Secure socket object.
  */
 {
-	LOG(Log::Printf(_L("CTlsConnection::NewL(1)")));
+	LOG(Log::Printf(_L("CTlsConnection::NewL(RSocket)")));
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 	if (!psaInitState) {
 		psaInitState = ETrue;
@@ -52,6 +52,7 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
 	return self;
 }
 
+// only 9.2+
 EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, const TDesC& aProtocol)
 /**
  * Creates and initialises a new CTlsConnection object.
@@ -62,7 +63,7 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, cons
  * @return A pointer to a newly created Secure socket object.
  */
 {
-	LOG(Log::Printf(_L("CTlsConnection::NewL(2)")));
+	LOG(Log::Printf(_L("CTlsConnection::NewL(MGenericSecureSocket)")));
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 	if (!psaInitState) {
 		psaInitState = ETrue;
@@ -78,6 +79,7 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, cons
 	return self;
 }
 
+// only 9.2+
 EXPORT_C void CTlsConnection::UnloadDll(TAny* /*aPtr*/)
 {
 	LOG(Log::Printf(_L("CTlsConnection::UnloadDll()")));
@@ -127,12 +129,6 @@ CTlsConnection::~CTlsConnection()
 		delete iBio;
 		iBio = NULL;
 	}
-#ifdef USE_GENERIC_SOCKET
-	if (iGenericSocket) {
-		delete iGenericSocket;
-		iGenericSocket = NULL;
-	}
-#endif
 	if (iClientCert) {
 		delete iClientCert;
 		iClientCert = NULL;
@@ -176,12 +172,10 @@ void CTlsConnection::ConstructL(RSocket& aSocket, const TDesC& aProtocol)
 {
 	LOG(Log::Printf(_L("CTlsConnection::ConstructL(1)")));
 	CActiveScheduler::Add(this);
-	
-#ifdef USE_GENERIC_SOCKET
-	iGenericSocket = new (ELeave) CGenericSecureSocket<RSocket>(aSocket);
-	iSocket = iGenericSocket;
-#else
+
 	iSocket = &aSocket;
+#ifdef USE_GENERIC_SOCKET
+	iIsGenericSocket = EFalse;
 #endif
 	
 	Init();
@@ -206,7 +200,8 @@ void CTlsConnection::ConstructL(MGenericSecureSocket& aSocket, const TDesC& aPro
 	CActiveScheduler::Add(this);
 
 #ifdef USE_GENERIC_SOCKET
-	iSocket = &aSocket;
+	iGenericSocket = &aSocket;
+	iIsGenericSocket = ETrue;
 #else
 	iSocket = (RSocket*)&aSocket;
 #endif
@@ -293,9 +288,17 @@ void CTlsConnection::CancelRecv()
  */
 {
 	LOG(Log::Printf(_L("CTlsConnection::CancelRecv()")));
-	if (iSocket && (Busy() || iDataMode)) {
-		iSocket->CancelRecv();
-		iSocket->CancelRead();
+	if (Busy() || iDataMode) {
+#ifdef USE_GENERIC_SOCKET
+		if (iGenericSocket) {
+			iGenericSocket->CancelRecv();
+			iGenericSocket->CancelRead();
+		} else
+#endif
+		{
+			iSocket->CancelRecv();
+			iSocket->CancelRead();
+		}
 	}
 	if (iRecvData) {
 		iRecvData->Cancel(KErrNone);
@@ -308,8 +311,15 @@ void CTlsConnection::CancelSend()
  */
 {
 	LOG(Log::Printf(_L("CTlsConnection::CancelSend()")));
-	if (iSocket && (Busy() || iDataMode)) {
-		iSocket->CancelSend();
+	if (Busy() || iDataMode) {
+#ifdef USE_GENERIC_SOCKET
+		if (iGenericSocket) {
+			iGenericSocket->CancelSend();
+		} else
+#endif
+		{
+			iSocket->CancelSend();
+		}
 	}
 	if (iSendData) {
 		iSendData->Cancel(KErrNone);
@@ -358,6 +368,11 @@ void CTlsConnection::Close()
 //	if (iMbedContext) {
 //		iMbedContext->SslCloseNotify();
 //	}
+#ifdef USE_GENERIC_SOCKET
+	if (iGenericSocket) {
+		iGenericSocket->Close();
+	} else
+#endif
 	if (iSocket) {
 		iSocket->Close();
 	}
@@ -436,7 +451,12 @@ TInt CTlsConnection::GetOpt(TUint aOptionName,TUint aOptionLevel,TDes8& aOption)
 {
 	LOG(Log::Printf(_L("CTlsConnection::GetOpt(1): %d %d"), aOptionName, aOptionLevel));
 	if (aOptionLevel != KSolInetSSL) {
-		return Socket().GetOpt(aOptionName, aOptionLevel, aOption);
+#ifdef USE_GENERIC_SOCKET
+		if (iIsGenericSocket) {
+			return iGenericSocket->GetOpt(aOptionName, aOptionLevel, aOption);
+		}
+#endif
+		return iSocket->GetOpt(aOptionName, aOptionLevel, aOption);
 	}
 	return KErrNone;
 }
@@ -737,7 +757,14 @@ TInt CTlsConnection::SetOpt(TUint aOptionName,TUint aOptionLevel, const TDesC8& 
 	}
 	default:	// Not a supported SSL option, call RSocket::SetOpt directly
 	{
-		ret = Socket().SetOpt(aOptionName, aOptionLevel, aOption);
+#ifdef USE_GENERIC_SOCKET
+		if (iIsGenericSocket) {
+			ret = iGenericSocket->SetOpt(aOptionName, aOptionLevel, aOption);
+		} else
+#endif
+		{
+			ret = iSocket->SetOpt(aOptionName, aOptionLevel, aOption);
+		}
 		break;
 	}
 	}
