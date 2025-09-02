@@ -320,6 +320,37 @@ void CRecvEvent::ReConstruct(CStateMachine* aStateMachine)
 	iStateMachine = aStateMachine;
 }
 
+LOCAL_C TInt MapError(TInt aErr, TInt aDefault) {
+	switch (aErr) {
+		case MBEDTLS_ERR_SSL_INVALID_MAC:
+			return KErrSSLBadMAC;
+		case MBEDTLS_ERR_SSL_INVALID_RECORD:
+//		case MBEDTLS_ERR_SSL_DECODE_ERROR:
+			return KErrSSLBadRecordHeader;
+		case MBEDTLS_ERR_SSL_NO_CLIENT_CERTIFICATE:
+			return KErrSSLNoClientCert;
+		case MBEDTLS_ERR_SSL_UNSUPPORTED_EXTENSION:
+			return KErrSSLRecvNotSupportedHS;
+		case MBEDTLS_ERR_SSL_UNEXPECTED_MESSAGE:
+			return KErrSSLUnexpectedMessage;
+		case MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+			return KErrSSLReceivedAlert;
+		case MBEDTLS_ERR_SSL_BAD_CERTIFICATE:
+			return KErrSSLInvalidCert;
+		case MBEDTLS_ERR_SSL_CONN_EOF:
+		case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
+			return KErrEof;
+		case MBEDTLS_ERR_SSL_TIMEOUT:
+			return KErrTimedOut;
+		case MBEDTLS_ERR_SSL_BAD_PROTOCOL_VERSION:
+			return KErrSSLBadProtocolVersion;
+		case MBEDTLS_ERR_SSL_HANDSHAKE_FAILURE:
+			return KErrSSLAlertHandshakeFailure;
+		default:
+			return aDefault;
+	}
+}
+
 CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 {
 	LOG(Log::Printf(_L("+CRecvEvent::ProcessL()")));
@@ -363,7 +394,7 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		ret = KErrEof;
 		LOG(Log::Printf(_L("Read eof")));
 	} else if (res < 0) {
-		ret = res;
+		ret = MapError(res, res);
 		LOG(Log::Printf(_L("Read error: %x"), -res));
 	} else {
 //		LOG(Log::Printf(_L("Recv %d"), res));
@@ -526,9 +557,7 @@ CAsynchEvent* CSendEvent::ProcessL(TRequestStatus& aStatus)
 			return this;
 		}
 		if (res < 0) {
-			if (res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-				ret = KErrEof;
-			}
+			ret = MapError(res, res);
 			LOG(Log::Printf(_L("Write error: %x"), -res));
 		} else {
 			iCurrentPos += res;
@@ -655,7 +684,7 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 	}
 	TInt ret = KErrNone;
 	if (res != 0) {
-		ret = KErrSSLAlertHandshakeFailure;
+		ret = MapError(res, KErrSSLAlertHandshakeFailure);
 		LOG(Log::Printf(_L("CHandshakeEvent::ProcessL() Err %x"), -res));
 	} else {
 		TUint8* data = 0;
