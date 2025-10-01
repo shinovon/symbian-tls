@@ -1,0 +1,5 @@
+EXPORTS
+	?NewL@CTlsConnection@@SAPAVMSecureSocket@@AAVRSocket@@ABVTDesC16@@@Z @ 1 NONAME ; public: static class MSecureSocket * __cdecl CTlsConnection::NewL(class RSocket &,class TDesC16 const &)
+	?UnloadDll@CTlsConnection@@SAXPAX@Z @ 2 NONAME ; void CTlsConnection::UnloadDll(void *)
+	?NewL@CTlsConnection@@SAPAVMSecureSocket@@AAVMGenericSecureSocket@@ABVTDesC16@@@Z @ 3 NONAME ; class MSecureSocket * CTlsConnection::NewL(class MGenericSecureSocket &, class TDesC16 const &)
+
