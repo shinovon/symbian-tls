@@ -88,6 +88,9 @@ protected:
 
 inline void CRecvData::Start(TRequestStatus* aClientStatus, MStateMachineNotify* aStateMachineNotify)
 {
+	if (!iActiveEvent) {
+		iActiveEvent = (CAsynchEvent *)&iRecvEvent;
+	}
 	CStateMachine::Start(aClientStatus, NULL, aStateMachineNotify);
 }
 

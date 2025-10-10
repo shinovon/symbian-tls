@@ -263,10 +263,11 @@ void CRecvData::OnCompletion()
 		TDes8* pData = iRecvEvent.UserData();
 		if (pData) {
 			if (iSockXfrLength && pData->Length()) {
+				LOG(Log::Printf(_L("xfr set %d"), pData->Length()));
 				*iSockXfrLength = pData->Length();
 			}
 			else if (pData->Length() < pData->MaxLength()) {
-//				LOG(Log::Printf(_L("Recvdata repeat %d / %d"), pData->Length(), pData->MaxLength()));
+				LOG(Log::Printf(_L("Recvdata repeat %d / %d"), pData->Length(), pData->MaxLength()));
 				iActiveEvent = &iRecvEvent;
 				Start(iClientStatus, iStateMachineNotify);
 				return;
@@ -274,7 +275,7 @@ void CRecvData::OnCompletion()
 		}
 	}
 	
-//	LOG(Log::Printf(_L("Recvdata complete")));
+	LOG(Log::Printf(_L("Recvdata complete")));
 	
 	iRecvEvent.SetUserData(NULL);
 	iRecvEvent.SetUserMaxLength(0);
@@ -358,10 +359,11 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 	
 	TInt ret = iStateMachine->LastError();
 	if (ret != KErrNone) {
+		LOG(Log::Printf(_L("-CRecvEvent::ProcessL() Err")));
 		User::RequestComplete(pStatus, iStateMachine->LastError());
 		return NULL;
 	}
-	if (iBio.iReadState == 0 || iBio.iReadState == 2) {
+	if (/*iBio.iReadState == 0 || */iBio.iReadState == 2) {
 		iBio.Recv(aStatus);
 		return this;
 	}
@@ -397,14 +399,15 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		ret = MapError(res, res);
 		LOG(Log::Printf(_L("Read error: %x"), -res));
 	} else {
-//		LOG(Log::Printf(_L("Recv %d"), res));
+		LOG(Log::Printf(_L("Recv %d"), res));
 
 		if (offset + res > iUserData->MaxLength()) {
 			User::Panic(_L("newtls"), 2);
 		}
 		iUserData->SetLength(offset + res);
 	}
-	
+
+	LOG(Log::Printf(_L("-CRecvEvent::ProcessL() Complete")));
 	User::RequestComplete(pStatus, ret);
 	return NULL;
 }

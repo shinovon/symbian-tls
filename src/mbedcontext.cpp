@@ -4,6 +4,7 @@
 
 #include "mbedcontext.h"
 #include "LOGFILE.h"
+#include <mbedtls/debug.h>
 
 CMbedContext::CMbedContext()
 {
@@ -35,6 +36,16 @@ void CMbedContext::SetBio(TAny* aContext, TAny* aSend, TAny* aRecv, TAny* aTimeo
 		(mbedtls_ssl_recv_t *) aRecv,
 		(mbedtls_ssl_recv_timeout_t *) aTimeout);
 }
+
+#ifdef _DEBUG
+static void my_debug(void *ctx, int level,
+                     const char *file, int line,
+                     const char *str)
+{
+//	((void) level);
+	LOG(Log::Printf8(_L8("mbedtls: %s:%04d: %s"), file, line, str));
+}
+#endif
 
 TInt CMbedContext::InitSsl()
 {
@@ -69,6 +80,10 @@ TInt CMbedContext::InitSsl()
 	LOG(Log::Printf(_L("crt parse %x"), ret));
 #endif
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+#ifdef _DEBUG
+	mbedtls_debug_set_threshold(999999);
+	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
+#endif
 	mbedtls_ssl_conf_session_tickets(&conf, 0);
 	mbedtls_ssl_conf_renegotiation(&conf, 0);
 	

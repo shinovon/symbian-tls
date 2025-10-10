@@ -29,6 +29,11 @@ void Log::Write(const TDesC& aDes)
 	RFileLogger::Write(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
 	}
 
+void Log::Write8(const TDesC8& aDes)
+	{
+	RFileLogger::Write(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+	}
+
 
 void Log::Printf(TRefByValue<const TDesC> aFmt, ...)
 	{
@@ -39,9 +44,19 @@ void Log::Printf(TRefByValue<const TDesC> aFmt, ...)
     //coverity[uninit_use_in_call];
     buf.FormatList(aFmt, list);
 	Write(buf);
-	//RDebug::RawPrint(buf);
+	RDebug::RawPrint(buf);
 	}
-
+void Log::Printf8(TRefByValue<const TDesC8> aFmt, ...)
+	{
+    //coverity[var_decl];
+    VA_LIST list;
+    VA_START(list, aFmt);
+	TBuf8<0x100> buf;
+    //coverity[uninit_use_in_call];
+    buf.FormatList(aFmt, list);
+	Write8(buf);
+	RDebug::RawPrint(buf);
+	}
 
 void Log::HexDump(const TText* aHeader, const TText* aMargin, const TUint8* aPtr, TInt aLen)
 	{
