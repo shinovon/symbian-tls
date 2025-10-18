@@ -282,7 +282,9 @@ public:
 protected:
 	CMbedContext& iMbedContext;
 	CBio& iBio;
+#ifndef NO_VERIFY
 	MSecurityDialog* iSecurityDialog;
+#endif
 	TBool iInDialog;
 	TBool iHandshaked;
 };
