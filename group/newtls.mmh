@@ -29,7 +29,7 @@ LIBRARY		netsm.lib
 LIBRARY		x509.lib
 LIBRARY		ctframework.lib
 
-OPTION CW -wchar_t on -lang c99 -w off -undefine _WIN32 -relax_pointers
+OPTION CW -undefine _WIN32 -relax_pointers
 #if defined(ARMCC_4_0)
 OPTION ARMCC --import_all_vtbl
 #endif
@@ -41,8 +41,10 @@ ALWAYS_BUILD_AS_ARM
 OPTION ARMCC -O2 -Otime
 
 SYSTEMINCLUDE		/epoc32/include
+#if 0
 SYSTEMINCLUDE		/epoc32/include/mbedtls
 SYSTEMINCLUDE		/epoc32/include/psa
+#endif
 SYSTEMINCLUDE		/epoc32/include/platform
 
 UNPAGED

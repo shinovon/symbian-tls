@@ -70,7 +70,11 @@ LOCAL_C int recv_callback(void *ctx, unsigned char *buf, size_t len)
 		s->iReadLength = (TInt) len;
 		s->iReadState = 2;
 		LOG(Log::Printf(_L("-recv_callback WANT_READ %d"), len));
+#ifdef BEARSSL
+		return 0;
+#else
 		return MBEDTLS_ERR_SSL_WANT_READ;
+#endif
 	}
 	
 	s->iReadLength = -1;
@@ -323,6 +327,16 @@ void CRecvEvent::ReConstruct(CStateMachine* aStateMachine)
 
 LOCAL_C TInt MapError(TInt aErr, TInt aDefault) {
 	switch (aErr) {
+#ifdef BEARSSL
+		case -BR_ERR_BAD_MAC:
+			return KErrSSLBadMAC;
+		case -BR_ERR_UNEXPECTED:
+			return KErrSSLUnexpectedMessage;
+		case -BR_ERR_BAD_VERSION:
+			return KErrSSLBadProtocolVersion;
+		case -BR_ERR_BAD_HANDSHAKE:
+			return KErrSSLAlertHandshakeFailure;
+#else
 		case MBEDTLS_ERR_SSL_INVALID_MAC:
 			return KErrSSLBadMAC;
 		case MBEDTLS_ERR_SSL_INVALID_RECORD:
@@ -347,7 +361,14 @@ LOCAL_C TInt MapError(TInt aErr, TInt aDefault) {
 			return KErrSSLBadProtocolVersion;
 		case MBEDTLS_ERR_SSL_HANDSHAKE_FAILURE:
 			return KErrSSLAlertHandshakeFailure;
+#endif
 		default:
+#ifdef BEARSSL
+			if (aErr <= -BR_ERR_RECV_FATAL_ALERT && aErr > -(BR_ERR_RECV_FATAL_ALERT + 256)) {
+				return KErrSSLReceivedAlert;
+			}
+			if (aErr == MBEDTLS_ERR_SSL_CONN_EOF) return KErrEof;
+#endif
 			return aDefault;
 	}
 }
@@ -392,7 +413,7 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		User::RequestComplete(pStatus, KErrNone);
 		return this;
 	}
-	if (res == 0 || res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+	if (res == 0 || res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || res == MBEDTLS_ERR_SSL_CONN_EOF) {
 		ret = KErrEof;
 		LOG(Log::Printf(_L("Read eof")));
 	} else if (res < 0) {

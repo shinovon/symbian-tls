@@ -6,10 +6,23 @@
 #define MBEDCONTEXT_H
 #include <e32base.h>
 
+#ifdef BEARSSL
+#include <bearssl/bearssl_ssl.h>
+
+#define MBEDTLS_ERR_SSL_WANT_READ -0x6900
+#define MBEDTLS_ERR_SSL_WANT_WRITE -0x6880
+#define MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS -0x6800
+#define MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS -0x6780
+#define MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET -0x6600
+#define MBEDTLS_ERR_SSL_CONN_EOF -0x7280
+#define MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY -0x7880
+
+#else
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
+#endif
 
 class CMbedContext : public CBase {
 public:
@@ -17,11 +30,19 @@ public:
 	~CMbedContext();
 	
 protected:
+#ifdef BEARSSL
+	br_x509_minimal_context xc;
+	br_ssl_client_context sc;
+	unsigned char iobuf[BR_SSL_BUFSIZE_BIDI];
+	br_sslio_context ioc;
+	bool iResetDone;
+#else
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
 	mbedtls_ctr_drbg_context ctr_drbg;
 	mbedtls_entropy_context entropy;
 	mbedtls_x509_crt cacert;
+#endif
 	const char* hostname; // owned
 
 public:

@@ -4,24 +4,93 @@
 
 #include "mbedcontext.h"
 #include "LOGFILE.h"
+#ifndef BEARSSL
 #include <mbedtls/debug.h>
+#endif
+
+#ifdef BEARSSL
+
+static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
+	int err = br_ssl_engine_last_error(eng);
+	if (err == BR_ERR_OK) return MBEDTLS_ERR_SSL_CONN_EOF;
+	return -err;
+}
+
+static int Pump(CMbedContext* ctx, br_ssl_client_context* sc, br_sslio_context* ioc) {
+	bool progressed = true;
+	while (progressed) {
+		progressed = false;
+		
+		size_t slen = 0;
+		unsigned char* sbuf = br_ssl_engine_sendrec_buf(&sc->eng, &slen);
+		if (sbuf != NULL && slen > 0) {
+			int r = ioc->low_write(ioc->write_context, sbuf, slen);
+			if (r > 0) {
+				br_ssl_engine_sendrec_ack(&sc->eng, r);
+				progressed = true;
+			} else if (r == MBEDTLS_ERR_SSL_WANT_WRITE) {
+				return MBEDTLS_ERR_SSL_WANT_WRITE;
+			} else if (r < 0) {
+				return r;
+			}
+		}
+		
+		size_t rlen = 0;
+		unsigned char* rbuf = br_ssl_engine_recvrec_buf(&sc->eng, &rlen);
+		if (rbuf != NULL && rlen > 0) {
+			int r = ioc->low_read(ioc->read_context, rbuf, rlen);
+			if (r > 0) {
+				br_ssl_engine_recvrec_ack(&sc->eng, r);
+				progressed = true;
+			} else if (r == MBEDTLS_ERR_SSL_WANT_READ) {
+				if (!progressed) {
+					return MBEDTLS_ERR_SSL_WANT_READ;
+				}
+			} else if (r == 0) {
+				return MBEDTLS_ERR_SSL_CONN_EOF;
+			} else if (r < 0) {
+				return r;
+			}
+		}
+	}
+	return 0;
+}
+
+#endif
 
 CMbedContext::CMbedContext()
 {
+#ifdef BEARSSL
+	br_ssl_client_init_full(&sc, &xc, NULL, 0);
+	iResetDone = false;
+
+	{
+		// TODO replace with random
+		char buf[32];
+		br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
+	}
+	
+	br_ssl_engine_set_buffer(&sc.eng, iobuf, sizeof(iobuf), 1);
+#else
 	mbedtls_ssl_init(&ssl);
 	mbedtls_ssl_config_init(&conf);
 	mbedtls_ctr_drbg_init(&ctr_drbg);
 	mbedtls_entropy_init(&entropy);
+#endif
 	hostname = NULL;
 }
 
 CMbedContext::~CMbedContext()
 {
+#ifdef BEARSSL
+	br_sslio_close(&ioc);
+#else
 	mbedtls_ssl_free(&ssl);
 	mbedtls_ssl_config_free(&conf);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
 	mbedtls_entropy_free(&entropy);
 	mbedtls_x509_crt_free(&cacert);
+#endif
 	if (hostname != NULL) {
 		delete[] hostname;
 		hostname = NULL;
@@ -30,11 +99,18 @@ CMbedContext::~CMbedContext()
 
 void CMbedContext::SetBio(TAny* aContext, TAny* aSend, TAny* aRecv, TAny* aTimeout)
 {
+#ifdef BEARSSL
+	ioc.read_context = aContext;
+	ioc.low_read = (int (*)(void *, unsigned char *, size_t)) aRecv;
+	ioc.write_context = aContext;
+	ioc.low_write = (int (*)(void *, const unsigned char *, size_t)) aSend;
+#else
 	mbedtls_ssl_set_bio(&ssl,
 		aContext,
 		(mbedtls_ssl_send_t *) aSend,
 		(mbedtls_ssl_recv_t *) aRecv,
 		(mbedtls_ssl_recv_timeout_t *) aTimeout);
+#endif
 }
 
 #ifdef _DEBUG
@@ -51,6 +127,9 @@ TInt CMbedContext::InitSsl()
 {
 	TInt ret(0);
 	
+#ifdef BEARSSL
+	br_ssl_engine_set_versions(&sc.eng, BR_TLS10, BR_TLS12);
+#else
 	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
 									 NULL, 0)) != 0) {
 		goto exit;
@@ -90,6 +169,7 @@ TInt CMbedContext::InitSsl()
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
 		goto exit;
 	}
+#endif
 	
 	exit:
 	return ret;
@@ -98,20 +178,49 @@ TInt CMbedContext::InitSsl()
 void CMbedContext::SetHostname(const char* aHostname)
 {
 	hostname = aHostname;
+#ifndef BEARSSL
 	mbedtls_ssl_set_hostname(&ssl, aHostname);
+#endif
 }
 
 TInt CMbedContext::Handshake()
 {
+#ifdef BEARSSL
+	if (!iResetDone) {
+		br_ssl_client_reset(&sc, hostname, 0);
+		iResetDone = true;
+	}
+	
+	int r = Pump(this, &sc, &ioc);
+	if (r < 0) return r;
+	
+	unsigned state = br_ssl_engine_current_state(&sc.eng);
+	if (state == BR_SSL_CLOSED) {
+		return get_last_bearssl_error(&sc.eng);
+	}
+	if ((state & BR_SSL_SENDAPP) || (state & BR_SSL_RECVAPP)) {
+		return 0;
+	}
+	
+	return MBEDTLS_ERR_SSL_WANT_READ;
+#else
 	return mbedtls_ssl_handshake(&ssl);
+#endif
 }
 
 TInt CMbedContext::Renegotiate()
 {
+#ifdef BEARSSL
+	return Handshake();
+#else
 	return mbedtls_ssl_renegotiate(&ssl);
+#endif
 }
 
 TInt CMbedContext::GetPeerCert(TUint8*& aData) {
+#ifdef BEARSSL
+	return -1;
+#else
 	const mbedtls_x509_crt* cert = mbedtls_ssl_get_peer_cert(&ssl);
 	if (!cert) {
 		return -1;
@@ -121,11 +230,16 @@ TInt CMbedContext::GetPeerCert(TUint8*& aData) {
 	memcpy(aData, cert->raw.p, len);
 	
 	return len;
+#endif
 }
 
 TInt CMbedContext::Verify()
 {
+#ifdef BEARSSL
+	return 0;
+#else
 	return mbedtls_ssl_get_verify_result(&ssl);
+#endif
 }
 
 //TInt CMbedContext::ExportSession(unsigned char *aData, TInt aMaxLen, TUint* aLen) {
@@ -145,26 +259,84 @@ TInt CMbedContext::Verify()
 
 TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 {
+#ifdef BEARSSL
+	int r = Pump(this, &sc, &ioc);
+	if (r < 0) return r;
+	
+	unsigned state = br_ssl_engine_current_state(&sc.eng);
+	if (state == BR_SSL_CLOSED) {
+		int err = br_ssl_engine_last_error(&sc.eng);
+		if (err == BR_ERR_OK) return MBEDTLS_ERR_SSL_CONN_EOF;
+		return -err;
+	}
+	
+	size_t rlen;
+	unsigned char* rbuf = br_ssl_engine_recvapp_buf(&sc.eng, &rlen);
+	if (rbuf != NULL && rlen > 0) {
+		if (rlen > (size_t)aLen) rlen = aLen;
+		memcpy(aData, rbuf, rlen);
+		br_ssl_engine_recvapp_ack(&sc.eng, rlen);
+		return rlen;
+	}
+	
+	return MBEDTLS_ERR_SSL_WANT_READ;
+#else
 	return mbedtls_ssl_read(&ssl, aData, static_cast<unsigned int>(aLen));
+#endif
 }
 
 TInt CMbedContext::Write(const unsigned char* aData, TInt aLen)
 {
+#ifdef BEARSSL
+	int r = Pump(this, &sc, &ioc);
+	if (r < 0) return r;
+	
+	unsigned state = br_ssl_engine_current_state(&sc.eng);
+	if (state == BR_SSL_CLOSED) {
+		return get_last_bearssl_error(&sc.eng);
+	}
+	
+	size_t wlen;
+	unsigned char* wbuf = br_ssl_engine_sendapp_buf(&sc.eng, &wlen);
+	if (wbuf != NULL && wlen > 0) {
+		if (wlen > (size_t)aLen) wlen = aLen;
+		memcpy(wbuf, aData, wlen);
+		br_ssl_engine_sendapp_ack(&sc.eng, wlen);
+		br_ssl_engine_flush(&sc.eng, 0);
+		
+		Pump(this, &sc, &ioc);
+		return wlen;
+	}
+	
+	return MBEDTLS_ERR_SSL_WANT_WRITE;
+#else
 	return mbedtls_ssl_write(&ssl, aData, static_cast<unsigned int>(aLen));
+#endif
 }
 
 TInt CMbedContext::SslCloseNotify()
 {
+#ifdef BEARSSL
+	br_ssl_engine_close(&sc.eng);
+	Pump(this, &sc, &ioc);
+	return 0;
+#else
 	int ret;
 	do {
 		ret = mbedtls_ssl_close_notify(&ssl);
 	} while (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 			ret == MBEDTLS_ERR_SSL_WANT_WRITE);
 	return ret;
+#endif
 }
 
 TInt CMbedContext::Reset() {
+#ifdef BEARSSL
+	//br_ssl_client_reset(&sc, hostname, 1);
+	return 0;
+#else
 	return mbedtls_ssl_session_reset(&ssl);
+#endif
 }
 
 const TUint8* CMbedContext::Hostname() {
