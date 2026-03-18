@@ -1,0 +1,11 @@
+TARGET        ssl.dll
+
+#include "newtls.mmh"
+
+LIBRARY mbedtls.lib
+
+LIBRARY estlib.lib
+SYSTEMINCLUDE		\Symbian\8.1a\S60_2nd_FP3\epoc32\include
+SYSTEMINCLUDE		\Symbian\8.1a\S60_2nd_FP3\epoc32\include\libc
+
+MACRO BEARSSL

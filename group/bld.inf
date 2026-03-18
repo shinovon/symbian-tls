@@ -2,5 +2,6 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_MMPFILES
-newtls.mmp
+//newtls.mmp
 //newtls_static.mmp
+newtls_eka1.mmp

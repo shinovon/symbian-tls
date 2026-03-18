@@ -16,7 +16,7 @@
 #if !defined(__SSL_LOGFILE_H__)
 #define __SSL_LOGFILE_H__
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(EKA2)
 #include <comms-infras/commsdebugutility.h>
 #define __TRACEFILE__
 #endif

@@ -15,10 +15,12 @@
 
 #include <e32std.h>
 #include <e32base.h>
+#ifdef EKA2
 #include <e32debug.h>
+#endif
 #include "LOGFILE.H"
 
-#ifdef __TRACEFILE__
+#if defined(__TRACEFILE__)
 
 const TInt KHexDumpWidth = 16;
 

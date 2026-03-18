@@ -8,9 +8,9 @@ NOEXPORTLIBRARY
 #ifdef EKA2
 EPOCALLOWDLLDATA
 SMPSAFE
+#include <comms-infras/commsdebugutility.mmh> 
 #endif
 
-#include <comms-infras/commsdebugutility.mmh> 
 SOURCEPATH	../src
 SOURCE tlsconnection.cpp
 SOURCE mbedcontext.cpp
@@ -35,6 +35,8 @@ OPTION ARMCC --import_all_vtbl
 #endif
 OPTION GCCE -fvisibility-inlines-hidden
 
+#ifdef EKA2
+
 ALWAYS_BUILD_AS_ARM
 OPTION ARMCC -O2 -Otime
 
@@ -43,11 +45,13 @@ SYSTEMINCLUDE		/epoc32/include/mbedtls
 SYSTEMINCLUDE		/epoc32/include/psa
 SYSTEMINCLUDE		/epoc32/include/platform
 
+UNPAGED
+
+#endif
+
 START WINS
     BASEADDRESS 0x54540000
 END
-
-UNPAGED
 
 LINKAS ssl.dll
 DEFFILE ssl.def
