@@ -26,6 +26,13 @@ static TBool psaInitState = EFalse;
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef EKA2
+EXPORT_C TInt E32Dll(TDllReason)
+{
+	return KErrNone;
+}
+#endif
+
 EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aProtocol)
 /**
  * Creates and initialises a new CTlsConnection object.
@@ -52,6 +59,7 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
 	return self;
 }
 
+#ifdef EKA2
 // only 9.2+
 EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, const TDesC& aProtocol)
 /**
@@ -78,8 +86,8 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, cons
 	CleanupStack::Pop();
 	return self;
 }
+#endif
 
-// only 9.2+
 EXPORT_C void CTlsConnection::UnloadDll(TAny* /*aPtr*/)
 {
 	LOG(Log::Printf(_L("CTlsConnection::UnloadDll()")));

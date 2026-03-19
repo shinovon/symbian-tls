@@ -1,14 +1,12 @@
 /**
- * Copyright (c) 2024 Arman Jussupgaliyev
+ * Copyright (c) 2024-2026 Arman Jussupgaliyev
  */
 
 #include "mbedcontext.h"
 #include "LOGFILE.h"
-#ifndef BEARSSL
-#include <mbedtls/debug.h>
-#endif
-
 #ifdef BEARSSL
+
+//#include "certs.h"
 
 static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
 	int err = br_ssl_engine_last_error(eng);
@@ -16,51 +14,115 @@ static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
 	return -err;
 }
 
-static int Pump(CMbedContext* ctx, br_ssl_client_context* sc, br_sslio_context* ioc) {
+static int Pump(CMbedContext* ctx, br_ssl_client_context* sc, br_sslio_context* ioc, bool allow_read) {
+	unsigned initial_state = br_ssl_engine_current_state(&sc->eng);
+	bool completing_handshake = !(initial_state & BR_SSL_SENDAPP);
+
 	bool progressed = true;
 	while (progressed) {
 		progressed = false;
 		
-		size_t slen = 0;
-		unsigned char* sbuf = br_ssl_engine_sendrec_buf(&sc->eng, &slen);
-		if (sbuf != NULL && slen > 0) {
-			int r = ioc->low_write(ioc->write_context, sbuf, slen);
-			if (r > 0) {
-				br_ssl_engine_sendrec_ack(&sc->eng, r);
-				progressed = true;
-			} else if (r == MBEDTLS_ERR_SSL_WANT_WRITE) {
-				return MBEDTLS_ERR_SSL_WANT_WRITE;
-			} else if (r < 0) {
-				return r;
+		while (true) {
+			size_t slen = 0;
+			unsigned char* sbuf = br_ssl_engine_sendrec_buf(&sc->eng, &slen);
+			if (sbuf != NULL && slen > 0) {
+				int r = ioc->low_write(ioc->write_context, sbuf, slen);
+				if (r > 0) {
+					br_ssl_engine_sendrec_ack(&sc->eng, r);
+					progressed = true;
+					
+					if (completing_handshake && (br_ssl_engine_current_state(&sc->eng) & BR_SSL_SENDAPP)) {
+						return 0; 
+					}
+				} else if (r == MBEDTLS_ERR_SSL_WANT_WRITE) {
+					return MBEDTLS_ERR_SSL_WANT_WRITE;
+				} else if (r < 0) {
+					return r;
+				}
+			} else {
+				break; 
 			}
 		}
 		
-		size_t rlen = 0;
-		unsigned char* rbuf = br_ssl_engine_recvrec_buf(&sc->eng, &rlen);
-		if (rbuf != NULL && rlen > 0) {
-			int r = ioc->low_read(ioc->read_context, rbuf, rlen);
-			if (r > 0) {
-				br_ssl_engine_recvrec_ack(&sc->eng, r);
-				progressed = true;
-			} else if (r == MBEDTLS_ERR_SSL_WANT_READ) {
-				if (!progressed) {
+		if (allow_read) {
+			size_t rlen = 0;
+			unsigned char* rbuf = br_ssl_engine_recvrec_buf(&sc->eng, &rlen);
+			if (rbuf != NULL && rlen > 0) {
+				int r = ioc->low_read(ioc->read_context, rbuf, rlen);
+				if (r > 0) {
+					br_ssl_engine_recvrec_ack(&sc->eng, r);
+					progressed = true;
+
+					if (completing_handshake && (br_ssl_engine_current_state(&sc->eng) & BR_SSL_SENDAPP)) {
+						return 0; 
+					}
+				} else if (r == MBEDTLS_ERR_SSL_WANT_READ) {
 					return MBEDTLS_ERR_SSL_WANT_READ;
+				} else if (r == 0) {
+					return MBEDTLS_ERR_SSL_CONN_EOF;
+				} else if (r < 0) {
+					return r;
 				}
-			} else if (r == 0) {
-				return MBEDTLS_ERR_SSL_CONN_EOF;
-			} else if (r < 0) {
-				return r;
 			}
 		}
 	}
 	return 0;
 }
 
+
+static void x509_start_cert(const br_x509_class** ctx, uint32_t length) {
+	br_x509_minimal_vtable.start_cert(ctx, length);
+}
+
+static void x509_append(const br_x509_class** ctx, const unsigned char* buf, size_t len) {
+	br_x509_minimal_vtable.append(ctx, buf, len);
+}
+
+static void x509_end_cert(const br_x509_class** ctx) {
+	br_x509_minimal_vtable.end_cert(ctx);
+}
+
+static void x509_start_chain(const br_x509_class** ctx, const char* server_name) {
+	br_x509_minimal_vtable.start_chain(ctx, server_name);
+}
+
+static unsigned x509_end_chain(const br_x509_class** ctx) {
+	unsigned r = br_x509_minimal_vtable.end_chain(ctx);
+
+	return 0;
+}
+
+static const br_x509_pkey* x509_get_pkey(const br_x509_class*const* ctx, unsigned* usages) {
+	return br_x509_minimal_vtable.get_pkey(ctx, usages);
+}
+
+static const br_x509_class cert_verifier_vtable = {
+	sizeof(br_x509_minimal_context),
+	x509_start_chain,
+	x509_start_cert,
+	x509_append,
+	x509_end_cert,
+	x509_end_chain,
+	x509_get_pkey
+};
+#else
+#include <mbedtls/debug.h>
+
+#ifdef _DEBUG
+static void my_debug(void *ctx, int level,
+                     const char *file, int line,
+                     const char *str)
+{
+//	((void) level);
+	LOG(Log::Printf8(_L8("mbedtls: %s:%04d: %s"), file, line, str));
+}
+#endif
 #endif
 
 CMbedContext::CMbedContext()
 {
 #ifdef BEARSSL
+	//br_ssl_client_init_full(&sc, &xc, TAs, TAs_NUM);
 	br_ssl_client_init_full(&sc, &xc, NULL, 0);
 	iResetDone = false;
 
@@ -82,9 +144,7 @@ CMbedContext::CMbedContext()
 
 CMbedContext::~CMbedContext()
 {
-#ifdef BEARSSL
-	br_sslio_close(&ioc);
-#else
+#ifndef BEARSSL
 	mbedtls_ssl_free(&ssl);
 	mbedtls_ssl_config_free(&conf);
 	mbedtls_ctr_drbg_free(&ctr_drbg);
@@ -100,6 +160,7 @@ CMbedContext::~CMbedContext()
 void CMbedContext::SetBio(TAny* aContext, TAny* aSend, TAny* aRecv, TAny* aTimeout)
 {
 #ifdef BEARSSL
+	//ioc.engine = &sc.eng;
 	ioc.read_context = aContext;
 	ioc.low_read = (int (*)(void *, unsigned char *, size_t)) aRecv;
 	ioc.write_context = aContext;
@@ -112,16 +173,6 @@ void CMbedContext::SetBio(TAny* aContext, TAny* aSend, TAny* aRecv, TAny* aTimeo
 		(mbedtls_ssl_recv_timeout_t *) aTimeout);
 #endif
 }
-
-#ifdef _DEBUG
-static void my_debug(void *ctx, int level,
-                     const char *file, int line,
-                     const char *str)
-{
-//	((void) level);
-	LOG(Log::Printf8(_L8("mbedtls: %s:%04d: %s"), file, line, str));
-}
-#endif
 
 TInt CMbedContext::InitSsl()
 {
@@ -187,14 +238,22 @@ TInt CMbedContext::Handshake()
 {
 #ifdef BEARSSL
 	if (!iResetDone) {
+		if (hostname == 0) {
+			LOG(Log::Printf(_L("no hostname!")));
+		}
 		br_ssl_client_reset(&sc, hostname, 0);
+		xc.vtable = &cert_verifier_vtable;
 		iResetDone = true;
 	}
 	
-	int r = Pump(this, &sc, &ioc);
-	if (r < 0) return r;
-	
+	int r = Pump(this, &sc, &ioc, true); 
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
+	if (r < 0) {
+		LOG(Log::Printf(_L("CMbedContext::Handshake(): 2 pump: %d, state is %x"), r, state));
+		return r;
+	}
+	
+	LOG(Log::Printf(_L("CMbedContext::Handshake(): pump: %d, state is %x"), r, state));
 	if (state == BR_SSL_CLOSED) {
 		return get_last_bearssl_error(&sc.eng);
 	}
@@ -203,6 +262,7 @@ TInt CMbedContext::Handshake()
 	}
 	
 	return MBEDTLS_ERR_SSL_WANT_READ;
+	
 #else
 	return mbedtls_ssl_handshake(&ssl);
 #endif
@@ -260,9 +320,9 @@ TInt CMbedContext::Verify()
 TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
-	int r = Pump(this, &sc, &ioc);
-	if (r < 0) return r;
 	
+	int r = Pump(this, &sc, &ioc, true); 
+		
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
 	if (state == BR_SSL_CLOSED) {
 		int err = br_ssl_engine_last_error(&sc.eng);
@@ -279,6 +339,7 @@ TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 		return rlen;
 	}
 	
+	if (r < 0) return r;
 	return MBEDTLS_ERR_SSL_WANT_READ;
 #else
 	return mbedtls_ssl_read(&ssl, aData, static_cast<unsigned int>(aLen));
@@ -288,23 +349,23 @@ TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 TInt CMbedContext::Write(const unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
-	int r = Pump(this, &sc, &ioc);
-	if (r < 0) return r;
-	
+   int r = Pump(this, &sc, &ioc, false);
+   if (r < 0) return r;
+
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
 	if (state == BR_SSL_CLOSED) {
 		return get_last_bearssl_error(&sc.eng);
 	}
 	
-	size_t wlen;
+	size_t wlen = 0;
 	unsigned char* wbuf = br_ssl_engine_sendapp_buf(&sc.eng, &wlen);
 	if (wbuf != NULL && wlen > 0) {
 		if (wlen > (size_t)aLen) wlen = aLen;
 		memcpy(wbuf, aData, wlen);
 		br_ssl_engine_sendapp_ack(&sc.eng, wlen);
 		br_ssl_engine_flush(&sc.eng, 0);
-		
-		Pump(this, &sc, &ioc);
+
+		Pump(this, &sc, &ioc, false);
 		return wlen;
 	}
 	
@@ -318,7 +379,7 @@ TInt CMbedContext::SslCloseNotify()
 {
 #ifdef BEARSSL
 	br_ssl_engine_close(&sc.eng);
-	Pump(this, &sc, &ioc);
+	//Pump(this, &sc, &ioc);
 	return 0;
 #else
 	int ret;

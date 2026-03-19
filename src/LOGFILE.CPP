@@ -17,6 +17,8 @@
 #include <e32base.h>
 #ifdef EKA2
 #include <e32debug.h>
+#else
+#include <e32svr.h>
 #endif
 #include "LOGFILE.H"
 
@@ -46,7 +48,9 @@ void Log::Printf(TRefByValue<const TDesC> aFmt, ...)
     //coverity[uninit_use_in_call];
     buf.FormatList(aFmt, list);
 	Write(buf);
+#ifdef EKA2
 	RDebug::RawPrint(buf);
+#endif
 	}
 void Log::Printf8(TRefByValue<const TDesC8> aFmt, ...)
 	{
@@ -57,7 +61,9 @@ void Log::Printf8(TRefByValue<const TDesC8> aFmt, ...)
     //coverity[uninit_use_in_call];
     buf.FormatList(aFmt, list);
 	Write8(buf);
+#ifdef EKA2
 	RDebug::RawPrint(buf);
+#endif
 	}
 
 void Log::HexDump(const TText* aHeader, const TText* aMargin, const TUint8* aPtr, TInt aLen)

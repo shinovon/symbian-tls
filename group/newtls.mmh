@@ -17,46 +17,38 @@ SOURCE mbedcontext.cpp
 SOURCE tlsevents.cpp
 SOURCE LOGFILE.CPP
 
-USERINCLUDE	../../tlsprovider/inc
-USERINCLUDE ../../tls/secsock
-USERINCLUDE	../protocol
 USERINCLUDE ../inc
 
 LIBRARY		euser.lib
 LIBRARY		esock.lib
 LIBRARY		insock.lib
+#ifdef EKA2
 LIBRARY		netsm.lib
 LIBRARY		x509.lib
 LIBRARY		ctframework.lib
+#endif
 
-OPTION CW -undefine _WIN32 -relax_pointers
+OPTION CW -lang c99 -undefine _WIN32 -relax_pointers
 #if defined(ARMCC_4_0)
 OPTION ARMCC --import_all_vtbl
 #endif
 OPTION GCCE -fvisibility-inlines-hidden
 
 #ifdef EKA2
-
 ALWAYS_BUILD_AS_ARM
 OPTION ARMCC -O2 -Otime
 
 SYSTEMINCLUDE		/epoc32/include
-#if 0
 SYSTEMINCLUDE		/epoc32/include/mbedtls
 SYSTEMINCLUDE		/epoc32/include/psa
-#endif
 SYSTEMINCLUDE		/epoc32/include/platform
 
 UNPAGED
-
 #endif
 
 START WINS
     BASEADDRESS 0x54540000
 END
-
-LINKAS ssl.dll
-DEFFILE ssl.def
 
 #ifdef ARMCC_4_0
 ARMFPU softvfp

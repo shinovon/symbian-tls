@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 Arman Jussupgaliyev
+ * Copyright (c) 2024-2026 Arman Jussupgaliyev
  */
 
 #ifndef MBEDCONTEXT_H
@@ -7,10 +7,11 @@
 #include <e32base.h>
 
 #ifdef BEARSSL
-#include <bearssl/bearssl_ssl.h>
+#include <bearssl_ssl.h>
+#include <bearssl_x509.h>
 
-#define MBEDTLS_ERR_SSL_WANT_READ -0x6900
-#define MBEDTLS_ERR_SSL_WANT_WRITE -0x6880
+#define MBEDTLS_ERR_SSL_WANT_READ -0x6900 // -26880
+#define MBEDTLS_ERR_SSL_WANT_WRITE -0x6880 // -26752
 #define MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS -0x6800
 #define MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS -0x6780
 #define MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET -0x6600

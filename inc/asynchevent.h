@@ -1,29 +1,23 @@
-/**
-* Copyright (c) 2003-2009 Nokia Corporation and/or its subsidiary(-ies).
-* All rights reserved.
-* This component and the accompanying materials are made available
-* under the terms of the License "Symbian Foundation License v1.0"
-* which accompanies this distribution, and is available
-* at the URL "http://www.symbianfoundation.org/legal/sfl-v10.html".
-*
-* Initial Contributors:
-* Nokia Corporation - initial contribution.
-*
-* Contributors:
-*
-* Description:
-* declaration of CAsynchEvent class
-* THIS API IS INTERNAL TO NETWORKING AND IS SUBJECT TO CHANGE AND NOT FOR EXTERNAL USE
-* 
-*
-*/
-
-
-
-
+// Copyright (c) 2003-2009 Nokia Corporation and/or its subsidiary(-ies).
+// All rights reserved.
+// This component and the accompanying materials are made available
+// under the terms of "Eclipse Public License v1.0"
+// which accompanies this distribution, and is available
+// at the URL "http://www.eclipse.org/legal/epl-v10.html".
+//
+// Initial Contributors:
+// Nokia Corporation - initial contribution.
+//
+// Contributors:
+//
+// Description:
+// declaration of CAsynchEvent class
+// THIS API IS INTERNAL TO NETWORKING AND IS SUBJECT TO CHANGE AND NOT FOR EXTERNAL USE
+// 
+//
 
 /**
- @file AsynchEvent.h
+ @file 
  @internalTechnology
 */
 
@@ -80,3 +74,4 @@ inline CAsynchEvent* CAsynchEvent::Next() const
 }
 
 #endif
+

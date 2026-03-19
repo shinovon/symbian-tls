@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 Arman Jussupgaliyev
+ * Copyright (c) 2024-2026 Arman Jussupgaliyev
  * Copyright (c) 2009 Nokia Corporation
  */
 
@@ -29,8 +29,8 @@ public:
 	static CBio* NewL(CTlsConnection& aTlsConnection); 
 	~CBio();
 	
-	void Recv(TRequestStatus& aStatus);
-	void Send(TRequestStatus& aStatus);
+	void Recv(TRequestStatus* aStatus);
+	void Send(TRequestStatus* aStatus);
 	
 	void ClearRecvBuffer();
 	void ClearSendBuffer();

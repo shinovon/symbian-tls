@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2024 Arman Jussupgaliyev
+ * Copyright (c) 2024-2026 Arman Jussupgaliyev
  * Copyright (c) 2009 Nokia Corporation
  */
 
@@ -12,11 +12,12 @@
 
 LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 {
-	LOG(Log::Printf(_L("+send_callback %d"), len));
 	CBio* s = (CBio*) ctx;
+	LOG(Log::Printf(_L("+send_callback %d state: %d"), len, s->iWriteState));
 	
 	if (s->iWriteState == 1 && s->iWriteLength == len) {
 		s->iWriteState = 0;
+		LOG(Log::Printf(_L("-send_callback %d"), len));
 		return len;
 	}
 	
@@ -24,6 +25,7 @@ LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 		s->iWritePtr = (const TUint8*) buf;
 		s->iWriteLength = len;
 		s->iWriteState = 2;
+		LOG(Log::Printf(_L("-send_callback WANT_WRITE %d"), len));
 		return MBEDTLS_ERR_SSL_WANT_WRITE;
 	}
 	
@@ -43,6 +45,7 @@ LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 	User::WaitForRequest(stat);
 	
 	TInt ret = stat.Int() != KErrNone ? stat.Int() : len;
+	LOG(Log::Printf(_L("-send_callback SYNC %d (%d)"), ret, stat.Int()));
 	return ret;
 }
 
@@ -60,6 +63,9 @@ LOCAL_C int recv_callback(void *ctx, unsigned char *buf, size_t len)
 			User::Panic(_L("newtls"), 1);
 			return 0;
 		}
+		if (s->iPtrHBuf.Length() == 0) {
+			return MBEDTLS_ERR_SSL_WANT_READ;
+		}
 		des.Copy(s->iPtrHBuf);
 		s->iReadState = 0;
 		LOG(Log::Printf(_L("-recv_callback %d"), s->iPtrHBuf.Length()));
@@ -70,11 +76,7 @@ LOCAL_C int recv_callback(void *ctx, unsigned char *buf, size_t len)
 		s->iReadLength = (TInt) len;
 		s->iReadState = 2;
 		LOG(Log::Printf(_L("-recv_callback WANT_READ %d"), len));
-#ifdef BEARSSL
-		return 0;
-#else
 		return MBEDTLS_ERR_SSL_WANT_READ;
-#endif
 	}
 	
 	s->iReadLength = -1;
@@ -92,7 +94,7 @@ LOCAL_C int recv_callback(void *ctx, unsigned char *buf, size_t len)
 	
 	TInt ret = stat.Int() != KErrNone ? stat.Int() : des.Length();
 	if (ret == KErrEof) ret = 0;
-	LOG(Log::Printf(_L("-recv_callback %d (%d)"), ret, stat.Int()));
+	LOG(Log::Printf(_L("-recv_callback SYNC %d (%d)"), ret, stat.Int()));
 	return ret;
 }
 
@@ -135,11 +137,10 @@ CBio::~CBio()
 	delete iDataIn;
 }
 
-void CBio::Recv(TRequestStatus& aStatus)
+void CBio::Recv(TRequestStatus* aStatus)
 {
-	TRequestStatus* pStatus = &aStatus;
 	if (iReadState == 1) {
-		User::RequestComplete(pStatus, KErrNone);
+		User::RequestComplete(aStatus, KErrNone);
 		return;
 	}
 	TInt len = iReadLength;
@@ -156,7 +157,7 @@ void CBio::Recv(TRequestStatus& aStatus)
 		iDataIn = NULL;
 		iDataIn = HBufC8::NewL(iReadLength);
 		if (!iDataIn) {
-			User::RequestComplete(pStatus, KErrNoMemory);
+			User::RequestComplete(aStatus, KErrNoMemory);
 			return;
 		}
 	}
@@ -167,7 +168,7 @@ void CBio::Recv(TRequestStatus& aStatus)
 	} else
 #endif
 	{
-		iSocket.RecvOneOrMore(iPtrHBuf, 0, aStatus, iRecvLen);
+		iSocket.RecvOneOrMore(iPtrHBuf, 0, *aStatus, iRecvLen);
 	}
 
 	iReadState = 1;
@@ -175,15 +176,14 @@ void CBio::Recv(TRequestStatus& aStatus)
 	LOG(Log::Printf(_L("-CBio::Recv")));
 }
 
-void CBio::Send(TRequestStatus& aStatus)
+void CBio::Send(TRequestStatus* aStatus)
 {
 	if (iWriteState == 1 || !iWritePtr) {
 		// should not happen
-		TRequestStatus* pStatus = &aStatus;
-		User::RequestComplete(pStatus, KErrNone);
+		User::RequestComplete(aStatus, KErrNone);
 		return;
 	}
-//	LOG(Log::Printf(_L("Send data")));
+	LOG(Log::Printf(_L("Send data")));
 	const TPtrC8 des((const TUint8*) iWritePtr, iWriteLength);
 #ifdef USE_GENERIC_SOCKET
 	if (iIsGenericSocket) {
@@ -191,7 +191,7 @@ void CBio::Send(TRequestStatus& aStatus)
 	} else
 #endif
 	{
-		iSocket.Send(des, 0, aStatus);
+		iSocket.Send(des, 0, *aStatus);
 	}
 	iWriteState = 1;
 	iWritePtr = NULL;
@@ -364,9 +364,9 @@ LOCAL_C TInt MapError(TInt aErr, TInt aDefault) {
 #endif
 		default:
 #ifdef BEARSSL
-			if (aErr <= -BR_ERR_RECV_FATAL_ALERT && aErr > -(BR_ERR_RECV_FATAL_ALERT + 256)) {
-				return KErrSSLReceivedAlert;
-			}
+//			if (aErr <= -BR_ERR_RECV_FATAL_ALERT && aErr > -(BR_ERR_RECV_FATAL_ALERT + 256)) {
+//				return KErrSSLReceivedAlert;
+//			}
 			if (aErr == MBEDTLS_ERR_SSL_CONN_EOF) return KErrEof;
 #endif
 			return aDefault;
@@ -385,21 +385,21 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		return NULL;
 	}
 	if (/*iBio.iReadState == 0 || */iBio.iReadState == 2) {
-		iBio.Recv(aStatus);
+		iBio.Recv(&aStatus);
 		return this;
 	}
 	if (iBio.iWriteState == 2) {
-		iBio.Send(aStatus);
+		iBio.Send(&aStatus);
 		return this;
 	}
 	TInt offset = iUserData->Length();
 	TInt res = iMbedContext.Read((unsigned char*) iUserData->Ptr() + offset, iUserMaxLength - offset);
 //	if (res == MBEDTLS_ERR_SSL_WANT_READ) {
-//		iBio.Recv(aStatus);
+//		iBio.Recv(&aStatus);
 //		return this;
 //	}
 //	if (res == MBEDTLS_ERR_SSL_WANT_WRITE) {
-//		iBio.Send(aStatus);
+//		iBio.Send(&aStatus);
 //		return this;
 //	}
 	if (res == MBEDTLS_ERR_SSL_WANT_READ || res == MBEDTLS_ERR_SSL_WANT_WRITE) {
@@ -564,16 +564,29 @@ CAsynchEvent* CSendEvent::ProcessL(TRequestStatus& aStatus)
 		User::RequestComplete(pStatus, iStateMachine->LastError());
 		return NULL;
 	}
+	if (iBio.iWriteState == 2) {
+		iBio.Send(&aStatus);
+		return this;
+	}
 	if (iData) {
 		TInt res = iMbedContext.Write(iData->Ptr() + iCurrentPos, iData->Length() - iCurrentPos);
+
+		LOG(Log::Printf(_L("Write res %d"), res));
 		if (res == MBEDTLS_ERR_SSL_WANT_READ) {
-			iBio.Recv(aStatus);
+			iBio.Recv(&aStatus);
 			return this;
 		}
 		if (res == MBEDTLS_ERR_SSL_WANT_WRITE) {
-			iBio.Send(aStatus);
+			iBio.Send(&aStatus);
 			return this;
 		}
+#ifdef BEARSSL
+		if (iBio.iWriteState == 2) {
+			iCurrentPos += res;
+			iBio.Send(&aStatus);
+			return this;
+		}
+#endif
 		if (res == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
 			res == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS || 
 			res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
@@ -693,11 +706,11 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 	}
 	TInt res = iHandshaked ? iMbedContext.Renegotiate() : iMbedContext.Handshake();
 	if (res == MBEDTLS_ERR_SSL_WANT_READ) {
-		iBio.Recv(aStatus);
+		iBio.Recv(&aStatus);
 		return this;
 	}
 	if (res == MBEDTLS_ERR_SSL_WANT_WRITE) {
-		iBio.Send(aStatus);
+		iBio.Send(&aStatus);
 		return this;
 	}
 	if (res == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
@@ -714,6 +727,7 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 		TUint8* data = 0;
 		TInt len = iMbedContext.GetPeerCert(data);
 		TBool supportedCert = EFalse;
+#ifdef EKA2
 		if (len != -1) {
 			TRAP_IGNORE(
 				if (iBio.iTlsConnection.iServerCert) {
@@ -724,6 +738,7 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 				supportedCert = ETrue;
 			);
 		}
+#endif
 #ifndef NO_VERIFY
 		res = iMbedContext.Verify();
 		LOG(Log::Printf(_L("Verify result: %d"), res));

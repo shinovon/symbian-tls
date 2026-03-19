@@ -85,8 +85,10 @@ class CTlsConnection : public CActive, public MSecureSocket, public MStateMachin
 {
 public:
 	IMPORT_C static MSecureSocket* NewL(RSocket& aSocket, const TDesC& aProtocol);
+#ifdef EKA2
 	IMPORT_C static MSecureSocket* NewL(MGenericSecureSocket& aSocket, const TDesC& aProtocol);
-
+#endif
+	
 	IMPORT_C static void UnloadDll(TAny* /*aPtr*/);
 
 	 ~CTlsConnection();

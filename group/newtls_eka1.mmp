@@ -1,19 +1,24 @@
-TARGET        ssl.dll
+TARGET        ssladaptor.dll
 
 #include "newtls.mmh"
 
-LIBRARY mbedtls.lib
-
 LIBRARY estlib.lib
+LIBRARY comsdbgutil.lib
+
 #ifdef EKA2
 SYSTEMINCLUDE /epoc32/include/bearssl
 SYSTEMINCLUDE /epoc32/include/libc
-
-STATICLIBRARY bearssl.lib
 #else
-SYSTEMINCLUDE		\Symbian\8.1a\S60_2nd_FP3\epoc32\include
-SYSTEMINCLUDE		\Symbian\8.1a\S60_2nd_FP3\epoc32\include\libc
-SYSTEMINCLUDE		\Symbian\8.1a\S60_2nd_FP3\epoc32\include\bearssl
+SYSTEMINCLUDE		\Symbian\7.0s\Series60_v21_CW\epoc32\include
+SYSTEMINCLUDE		\Symbian\7.0s\Series60_v21_CW\epoc32\include\libc
+SYSTEMINCLUDE		..\..\bearssl\inc
 #endif
+STATICLIBRARY bearssl.lib
+
+SOURCEPATH	../src
+SOURCE StateMachine.cpp
 
 MACRO BEARSSL
+MACRO NO_VERIFY
+
+DEFFILE ssladaptor.def
