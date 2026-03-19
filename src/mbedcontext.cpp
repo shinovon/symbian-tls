@@ -94,16 +94,6 @@ static unsigned x509_end_chain(const br_x509_class** ctx) {
 static const br_x509_pkey* x509_get_pkey(const br_x509_class*const* ctx, unsigned* usages) {
 	return br_x509_minimal_vtable.get_pkey(ctx, usages);
 }
-
-static const br_x509_class cert_verifier_vtable = {
-	sizeof(br_x509_minimal_context),
-	x509_start_chain,
-	x509_start_cert,
-	x509_append,
-	x509_end_cert,
-	x509_end_chain,
-	x509_get_pkey
-};
 #else
 #include <mbedtls/debug.h>
 
@@ -141,6 +131,14 @@ CMbedContext::CMbedContext()
 		}
 		br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
 	}
+	
+	cert_verifier_vtable.context_size = sizeof(br_x509_minimal_context);
+	cert_verifier_vtable.start_chain = x509_start_chain;
+	cert_verifier_vtable.start_cert = x509_start_cert;
+	cert_verifier_vtable.append = x509_append;
+	cert_verifier_vtable.end_cert = x509_end_cert;
+	cert_verifier_vtable.end_chain = x509_end_chain;
+	cert_verifier_vtable.get_pkey = x509_get_pkey;
 	
 	br_ssl_engine_set_buffer(&sc.eng, iobuf, sizeof(iobuf), 1);
 #else

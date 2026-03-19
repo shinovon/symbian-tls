@@ -5,8 +5,7 @@
 #include "tlsconnection.h"
 
 #ifndef EKA2
-EXPORT_C TInt E32Dll(TDllReason)
-{
+EXPORT_C TInt E32Dll(TDllReason) {
 	return KErrNone;
 }
 #endif

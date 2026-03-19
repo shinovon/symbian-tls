@@ -499,7 +499,7 @@ void CSendData::OnCompletion()
 	
 	TDesC8* pAppData = iSendEvent.UserData();
 	if (pAppData) {
-		if (iSockXfrLength) {
+		if (iSockXfrLength && iLastError == KErrNone) {
 			*iSockXfrLength = iSendEvent.CurrentPos();
 		}
 		if (iLastError == KErrNone && iStatus.Int() == KErrNone) {
@@ -570,7 +570,7 @@ CAsynchEvent* CSendEvent::ProcessL(TRequestStatus& aStatus)
 		iBio.Send(&aStatus);
 		return this;
 	}
-	if (iData) {
+	if (iData && iCurrentPos != iData->Length()) {
 		TInt res = iMbedContext.Write(iData->Ptr() + iCurrentPos, iData->Length() - iCurrentPos);
 
 		LOG(Log::Printf(_L("Write res %d"), res));

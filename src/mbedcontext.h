@@ -39,6 +39,7 @@ protected:
 	bool iResetDone;
 	int iLastState;
 	int Pump(unsigned target);
+	br_x509_class cert_verifier_vtable;
 #else
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
