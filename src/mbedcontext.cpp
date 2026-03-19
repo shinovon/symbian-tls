@@ -5,7 +5,7 @@
 #include "mbedcontext.h"
 #include "LOGFILE.h"
 #ifdef BEARSSL
-
+#include <stdlib.h>
 //#include "certs.h"
 
 static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
@@ -127,8 +127,14 @@ CMbedContext::CMbedContext()
 	iResetDone = false;
 
 	{
-		// TODO replace with random
 		char buf[32];
+		for (int i = 0; i < 8; i++) {
+			int seed = rand();
+			buf[i << 2] = (unsigned char)(seed & 0xFF);
+			buf[(i << 2) + 1] = (unsigned char)((seed >> 8) & 0xFF);
+			buf[(i << 2) + 2] = (unsigned char)((seed >> 16) & 0xFF);
+			buf[(i << 2) + 3] = (unsigned char)((seed >> 24) & 0xFF);
+		}
 		br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
 	}
 	
