@@ -52,6 +52,7 @@ public:
 	TInt iReadLength;
 	
 	const TUint8* iWritePtr;
+	TPtrC8 iWriteDes;
 	TInt iWriteState;
 	TInt iWriteLength;
 	TSockXfrLength iRecvLen;

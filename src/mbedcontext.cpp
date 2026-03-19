@@ -14,59 +14,58 @@ static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
 	return -err;
 }
 
-static int Pump(CMbedContext* ctx, br_ssl_client_context* sc, br_sslio_context* ioc, bool allow_read) {
-	unsigned initial_state = br_ssl_engine_current_state(&sc->eng);
-	bool completing_handshake = !(initial_state & BR_SSL_SENDAPP);
+int CMbedContext::Pump(unsigned target) {
+	// copied from run_until
+	for (;;) {
+		unsigned state;
 
-	bool progressed = true;
-	while (progressed) {
-		progressed = false;
-		
-		while (true) {
-			size_t slen = 0;
-			unsigned char* sbuf = br_ssl_engine_sendrec_buf(&sc->eng, &slen);
-			if (sbuf != NULL && slen > 0) {
-				int r = ioc->low_write(ioc->write_context, sbuf, slen);
-				if (r > 0) {
-					br_ssl_engine_sendrec_ack(&sc->eng, r);
-					progressed = true;
-					
-					if (completing_handshake && (br_ssl_engine_current_state(&sc->eng) & BR_SSL_SENDAPP)) {
-						return 0; 
-					}
-				} else if (r == MBEDTLS_ERR_SSL_WANT_WRITE) {
-					return MBEDTLS_ERR_SSL_WANT_WRITE;
-				} else if (r < 0) {
-					return r;
-				}
-			} else {
-				break; 
+		state = br_ssl_engine_current_state(&sc.eng);
+		if (state & BR_SSL_CLOSED) {
+			return -1;
+		}
+
+		if (state & BR_SSL_SENDREC) {
+			unsigned char *buf;
+			size_t len;
+			int wlen;
+
+			buf = br_ssl_engine_sendrec_buf(&sc.eng, &len);
+			wlen = ioc.low_write(ioc.write_context, buf, len);
+			if (wlen < 0) {
+				return wlen;
 			}
+			if (wlen > 0) {
+				br_ssl_engine_sendrec_ack(&sc.eng, wlen);
+			}
+			continue;
+		}
+
+		if (state & target) {
+			return 0;
+		}
+
+		if (state & BR_SSL_RECVAPP) {
+			return -1;
+		}
+
+		if (state & BR_SSL_RECVREC) {
+			unsigned char *buf;
+			size_t len;
+			int rlen;
+
+			buf = br_ssl_engine_recvrec_buf(&sc.eng, &len);
+			rlen = ioc.low_read(ioc.read_context, buf, len);
+			if (rlen < 0) {
+				return rlen;
+			}
+			if (rlen > 0) {
+				br_ssl_engine_recvrec_ack(&sc.eng, rlen);
+			}
+			continue;
 		}
 		
-		if (allow_read) {
-			size_t rlen = 0;
-			unsigned char* rbuf = br_ssl_engine_recvrec_buf(&sc->eng, &rlen);
-			if (rbuf != NULL && rlen > 0) {
-				int r = ioc->low_read(ioc->read_context, rbuf, rlen);
-				if (r > 0) {
-					br_ssl_engine_recvrec_ack(&sc->eng, r);
-					progressed = true;
-
-					if (completing_handshake && (br_ssl_engine_current_state(&sc->eng) & BR_SSL_SENDAPP)) {
-						return 0; 
-					}
-				} else if (r == MBEDTLS_ERR_SSL_WANT_READ) {
-					return MBEDTLS_ERR_SSL_WANT_READ;
-				} else if (r == 0) {
-					return MBEDTLS_ERR_SSL_CONN_EOF;
-				} else if (r < 0) {
-					return r;
-				}
-			}
-		}
+		br_ssl_engine_flush(&sc.eng, 0);
 	}
-	return 0;
 }
 
 
@@ -87,7 +86,7 @@ static void x509_start_chain(const br_x509_class** ctx, const char* server_name)
 }
 
 static unsigned x509_end_chain(const br_x509_class** ctx) {
-	unsigned r = br_x509_minimal_vtable.end_chain(ctx);
+	(void) br_x509_minimal_vtable.end_chain(ctx);
 
 	return 0;
 }
@@ -128,12 +127,17 @@ CMbedContext::CMbedContext()
 
 	{
 		char buf[32];
+		TTime now;
+		now.HomeTime();
+		TInt64 seed64 = now.Int64();
+		
+		TUint32 seed1 = I64LOW(seed64) ^ User::TickCount();
+		TUint32 seed2 = I64HIGH(seed64) ^ (TUint32)&buf;
+
 		for (int i = 0; i < 8; i++) {
-			int seed = rand();
-			buf[i << 2] = (unsigned char)(seed & 0xFF);
-			buf[(i << 2) + 1] = (unsigned char)((seed >> 8) & 0xFF);
-			buf[(i << 2) + 2] = (unsigned char)((seed >> 16) & 0xFF);
-			buf[(i << 2) + 3] = (unsigned char)((seed >> 24) & 0xFF);
+			seed1 = (seed1 * 1103515245) + 12345;
+			seed2 = (seed2 * 1103515245) + 12345;
+			((TUint32*)buf)[i] = seed1 ^ seed2;
 		}
 		br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
 	}
@@ -244,20 +248,13 @@ TInt CMbedContext::Handshake()
 {
 #ifdef BEARSSL
 	if (!iResetDone) {
-		if (hostname == 0) {
-			LOG(Log::Printf(_L("no hostname!")));
-		}
 		br_ssl_client_reset(&sc, hostname, 0);
 		xc.vtable = &cert_verifier_vtable;
 		iResetDone = true;
 	}
 	
-	int r = Pump(this, &sc, &ioc, true); 
+	int r = Pump(BR_SSL_SENDAPP | BR_SSL_RECVAPP); 
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
-	if (r < 0) {
-		LOG(Log::Printf(_L("CMbedContext::Handshake(): 2 pump: %d, state is %x"), r, state));
-		return r;
-	}
 	
 	LOG(Log::Printf(_L("CMbedContext::Handshake(): pump: %d, state is %x"), r, state));
 	if (state == BR_SSL_CLOSED) {
@@ -266,9 +263,9 @@ TInt CMbedContext::Handshake()
 	if ((state & BR_SSL_SENDAPP) || (state & BR_SSL_RECVAPP)) {
 		return 0;
 	}
-	
+	if (r < 0) return r;
+	// should not reach here
 	return MBEDTLS_ERR_SSL_WANT_READ;
-	
 #else
 	return mbedtls_ssl_handshake(&ssl);
 #endif
@@ -327,7 +324,8 @@ TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
 	
-	int r = Pump(this, &sc, &ioc, true); 
+	int r = Pump(BR_SSL_RECVAPP); 
+	if (r < 0) return r;
 		
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
 	if (state == BR_SSL_CLOSED) {
@@ -355,7 +353,7 @@ TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 TInt CMbedContext::Write(const unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
-   int r = Pump(this, &sc, &ioc, false);
+   int r = Pump(BR_SSL_SENDAPP);
    if (r < 0) return r;
 
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
@@ -371,7 +369,7 @@ TInt CMbedContext::Write(const unsigned char* aData, TInt aLen)
 		br_ssl_engine_sendapp_ack(&sc.eng, wlen);
 		br_ssl_engine_flush(&sc.eng, 0);
 
-		Pump(this, &sc, &ioc, false);
+		Pump(BR_SSL_SENDAPP);
 		return wlen;
 	}
 	

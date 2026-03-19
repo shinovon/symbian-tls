@@ -37,6 +37,8 @@ protected:
 	unsigned char iobuf[BR_SSL_BUFSIZE_BIDI];
 	br_sslio_context ioc;
 	bool iResetDone;
+	int iLastState;
+	int Pump(unsigned target);
 #else
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;

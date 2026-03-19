@@ -15,12 +15,15 @@ LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 	CBio* s = (CBio*) ctx;
 	LOG(Log::Printf(_L("+send_callback %d state: %d"), len, s->iWriteState));
 	
-	if (s->iWriteState == 1 && s->iWriteLength == len) {
+	if (s->iWriteState == 1) {
+		if (s->iWriteLength != len) {
+			// TODO do partial copy?
+			LOG(Log::Printf(_L("writelength different! %d != "), len, s->iWriteLength));
+		}
 		s->iWriteState = 0;
 		LOG(Log::Printf(_L("-send_callback %d"), len));
 		return len;
 	}
-	
 	if (s->iWriteState == 0) {
 		s->iWritePtr = (const TUint8*) buf;
 		s->iWriteLength = len;
@@ -28,7 +31,6 @@ LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 		LOG(Log::Printf(_L("-send_callback WANT_WRITE %d"), len));
 		return MBEDTLS_ERR_SSL_WANT_WRITE;
 	}
-	
 	s->iWriteState = 0;
 	
 	const TPtrC8 des((const TUint8*) buf, len);
@@ -164,7 +166,7 @@ void CBio::Recv(TRequestStatus* aStatus)
 	iPtrHBuf.Set((TUint8*)iDataIn->Des().Ptr(), 0, len);
 #ifdef USE_GENERIC_SOCKET
 	if (iIsGenericSocket) {
-		iGenericSocket.Recv(iPtrHBuf, 0, aStatus);
+		iGenericSocket.Recv(iPtrHBuf, 0, *aStatus);
 	} else
 #endif
 	{
@@ -183,15 +185,15 @@ void CBio::Send(TRequestStatus* aStatus)
 		User::RequestComplete(aStatus, KErrNone);
 		return;
 	}
-	LOG(Log::Printf(_L("Send data")));
-	const TPtrC8 des((const TUint8*) iWritePtr, iWriteLength);
+//	LOG(Log::Printf(_L("CBio::Send %d"), iWriteLength));
+	iWriteDes.Set((const TUint8*) iWritePtr, iWriteLength);
 #ifdef USE_GENERIC_SOCKET
 	if (iIsGenericSocket) {
-		iGenericSocket.Send(des, 0, aStatus);
+		iGenericSocket.Send(des, 0, *aStatus);
 	} else
 #endif
 	{
-		iSocket.Send(des, 0, *aStatus);
+		iSocket.Send(iWriteDes, 0, *aStatus);
 	}
 	iWriteState = 1;
 	iWritePtr = NULL;
@@ -704,6 +706,14 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 		User::RequestComplete(pStatus, KErrNone);
 		return NULL;
 	}
+//	if (iBio.iWriteState == 2) {
+//		iBio.Send(&aStatus);
+//		return this;
+//	}
+//	if (iBio.iReadState == 2) {
+//		iBio.Recv(&aStatus);
+//		return this;
+//	}
 	TInt res = iHandshaked ? iMbedContext.Renegotiate() : iMbedContext.Handshake();
 	if (res == MBEDTLS_ERR_SSL_WANT_READ) {
 		iBio.Recv(&aStatus);
