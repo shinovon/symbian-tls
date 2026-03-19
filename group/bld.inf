@@ -2,6 +2,10 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_MMPFILES
-//newtls.mmp
-//newtls_static.mmp
-newtls_eka1.mmp
+#ifdef EKA2
+newtls.mmp
+newtls_static.mmp
+#else
+newtls_bearssl.mmp
+ssladaptor.mmp
+#endif

@@ -1,4 +1,4 @@
-TARGET        ssladaptor.dll
+TARGET        ssl.dll
 
 #include "newtls.mmh"
 
@@ -20,5 +20,3 @@ SOURCE StateMachine.cpp
 
 MACRO BEARSSL
 MACRO NO_VERIFY
-
-DEFFILE ssladaptor.def

@@ -1,4 +1,4 @@
 EXPORTS
-	?NewL@CTlsConnection@@SAPAVMSecureSocket@@AAVRSocket@@ABVTDesC16@@@Z @ 1 NONAME ; public: static class MSecureSocket * __cdecl CTlsConnection::NewL(class RSocket &,class TDesC16 const &)
-	?UnloadDll@CTlsConnection@@SAXPAX@Z @ 2 NONAME ; void CTlsConnection::UnloadDll(void *)
+	?NewL@CSslAdaptor@@AAEPAVMSecureSocket@@AAVRSocket@@ABVTDesC16@@@Z @ 1 NONAME ; class MSecureSocket * CSslAdaptor::NewL(class RSocket &, class TDesC16 const &)
+	?UnloadDll@CSslAdaptor@@AAEXPAX@Z @ 2 NONAME ; void CSslAdaptor::UnloadDll(void *)
 

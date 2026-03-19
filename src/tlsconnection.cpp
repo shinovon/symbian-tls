@@ -59,7 +59,6 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
 	return self;
 }
 
-#ifdef EKA2
 // only 9.2+
 EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, const TDesC& aProtocol)
 /**
@@ -86,7 +85,6 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, cons
 	CleanupStack::Pop();
 	return self;
 }
-#endif
 
 EXPORT_C void CTlsConnection::UnloadDll(TAny* /*aPtr*/)
 {
