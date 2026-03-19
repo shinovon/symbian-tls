@@ -25,6 +25,7 @@ static TBool psaInitState = EFalse;
 #endif
 #include <string.h>
 #include <stdlib.h>
+#include <escapeutils.h>
 
 #ifndef EKA2
 EXPORT_C TInt E32Dll(TDllReason)
@@ -710,12 +711,11 @@ TInt CTlsConnection::SetOpt(TUint aOptionName,TUint aOptionLevel, const TDesC8& 
 				TPtr des = buf->Des();
 				des.Copy(aOption); 
 				
-				const wchar_t* w = (wchar_t*) des.PtrZ();
+				HBufC8* converted = EscapeUtils::ConvertFromUnicodeToUtf8L(buf->Des());
 				
-				size_t size = (wcslen(w) + 1) * sizeof(wchar_t);
-				
-				char* res = new char[size];
-				wcstombs(res, w, size);
+				char* res = new char[converted->Length() + 1];
+				Mem::Copy(res, converted->Ptr(), converted->Length());
+				res[converted->Length()] = 0;
 					
 				iMbedContext->SetHostname(res);
 //				delete[] res; // result is now held in mbed context
