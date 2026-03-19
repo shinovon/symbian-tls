@@ -189,7 +189,7 @@ void CBio::Send(TRequestStatus* aStatus)
 	iWriteDes.Set((const TUint8*) iWritePtr, iWriteLength);
 #ifdef USE_GENERIC_SOCKET
 	if (iIsGenericSocket) {
-		iGenericSocket.Send(des, 0, *aStatus);
+		iGenericSocket.Send(iWriteDes, 0, *aStatus);
 	} else
 #endif
 	{
