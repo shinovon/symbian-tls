@@ -3,19 +3,21 @@ TARGET        ssl.dll
 #include "newtls.mmh"
 
 LIBRARY estlib.lib
+#ifdef WINSCW
 LIBRARY comsdbgutil.lib
+#endif
 
 #ifdef EKA2
 SYSTEMINCLUDE /epoc32/include/bearssl
 SYSTEMINCLUDE /epoc32/include/libc
 #else
-SYSTEMINCLUDE		\Symbian\7.0s\Series60_v21_CW\epoc32\include
-SYSTEMINCLUDE		\Symbian\7.0s\Series60_v21_CW\epoc32\include\libc
-SYSTEMINCLUDE		..\..\bearssl\inc
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\libc
+SYSTEMINCLUDE ..\..\bearssl\inc
 #endif
 STATICLIBRARY bearssl.lib
 
-SOURCEPATH	../src
+SOURCEPATH ../src
 SOURCE StateMachine.cpp
 
 MACRO BEARSSL

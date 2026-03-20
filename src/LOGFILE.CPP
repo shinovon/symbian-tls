@@ -22,7 +22,7 @@
 #endif
 #include "LOGFILE.H"
 
-#if defined(__TRACEFILE__)
+#if defined(__TRACEFILE__) && (defined(EKA2) || defined(__WINSCW__))
 
 const TInt KHexDumpWidth = 16;
 

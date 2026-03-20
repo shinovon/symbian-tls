@@ -2,8 +2,6 @@ TARGET ssladaptor.dll
 TARGETTYPE dll
 UID 0x1000183d 0x101f35ee
 
-NOEXPORTLIBRARY
-
 SOURCEPATH ../src
 SOURCE ssladaptor.cpp
 
@@ -20,4 +18,6 @@ SYSTEMINCLUDE \Symbian\7.0s\Series60_v21_CW\epoc32\include\libc
 
 LIBRARY	euser.lib
 LIBRARY ssl.lib
+
+DEFFILE ssladaptor.def
 

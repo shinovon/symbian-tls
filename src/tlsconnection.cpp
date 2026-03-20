@@ -28,8 +28,7 @@ static TBool psaInitState = EFalse;
 #include <escapeutils.h>
 
 #ifndef EKA2
-EXPORT_C TInt E32Dll(TDllReason)
-{
+TInt E32Dll(TDllReason) {
 	return KErrNone;
 }
 #endif

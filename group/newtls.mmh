@@ -1,10 +1,10 @@
-CAPABILITY ALL -Tcb
 TARGETTYPE    DLL
 UID    0x1000183d 0x10001842
-VENDORID 0x70000001
 
-#ifdef EKA2
 EPOCALLOWDLLDATA
+#ifdef EKA2
+CAPABILITY ALL -Tcb
+VENDORID 0x70000001
 SMPSAFE
 #include <comms-infras/commsdebugutility.mmh> 
 #endif
@@ -17,13 +17,14 @@ SOURCE LOGFILE.CPP
 
 USERINCLUDE ../inc
 
-LIBRARY		euser.lib
-LIBRARY		esock.lib
-LIBRARY		insock.lib
+LIBRARY euser.lib
+LIBRARY esock.lib
+LIBRARY insock.lib
+LIBRARY inetprotutil.lib
 #ifdef EKA2
-LIBRARY		netsm.lib
-LIBRARY		x509.lib
-LIBRARY		ctframework.lib
+LIBRARY netsm.lib
+LIBRARY x509.lib
+LIBRARY ctframework.lib
 #endif
 
 OPTION CW -lang c99 -undefine _WIN32 -relax_pointers
@@ -36,10 +37,10 @@ OPTION GCCE -fvisibility-inlines-hidden
 ALWAYS_BUILD_AS_ARM
 OPTION ARMCC -O2 -Otime
 
-SYSTEMINCLUDE		/epoc32/include
-SYSTEMINCLUDE		/epoc32/include/mbedtls
-SYSTEMINCLUDE		/epoc32/include/psa
-SYSTEMINCLUDE		/epoc32/include/platform
+SYSTEMINCLUDE /epoc32/include
+SYSTEMINCLUDE /epoc32/include/mbedtls
+SYSTEMINCLUDE /epoc32/include/psa
+SYSTEMINCLUDE /epoc32/include/platform
 
 UNPAGED
 #endif
