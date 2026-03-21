@@ -735,9 +735,9 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 		LOG(Log::Printf(_L("CHandshakeEvent::ProcessL() Err %x"), -res));
 	} else {
 		TUint8* data = 0;
+#ifdef EKA2
 		TInt len = iMbedContext.GetPeerCert(data);
 		TBool supportedCert = EFalse;
-#ifdef EKA2
 		if (len != -1) {
 			TRAP_IGNORE(
 				if (iBio.iTlsConnection.iServerCert) {

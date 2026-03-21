@@ -1,6 +1,6 @@
 TARGET ssladaptor.dll
 TARGETTYPE dll
-UID 0x1000183d 0x101f35ee
+UID 0x101f35f0 0x101f35ee
 
 SOURCEPATH ../src
 SOURCE ssladaptor.cpp
@@ -12,8 +12,8 @@ SYSTEMINCLUDE /epoc32/include
 SYSTEMINCLUDE /epoc32/include/libc
 SYSTEMINCLUDE /epoc32/include/platform
 #else
-SYSTEMINCLUDE \Symbian\7.0s\Series60_v21_CW\epoc32\include
-SYSTEMINCLUDE \Symbian\7.0s\Series60_v21_CW\epoc32\include\libc
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\libc
 #endif
 
 LIBRARY	euser.lib
