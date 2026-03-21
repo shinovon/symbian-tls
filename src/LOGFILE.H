@@ -16,12 +16,8 @@
 #if !defined(__SSL_LOGFILE_H__)
 #define __SSL_LOGFILE_H__
 
-#if defined(_DEBUG)
-#ifdef EKA2
-#include <comms-infras/commsdebugutility.h>
-#else 
+#if defined(_DEBUG) || 1
 #include <flogger.h>
-#endif
 #define __TRACEFILE__
 #endif
 
@@ -44,6 +40,7 @@ class RFile;
 class Log
 	{
 public:
+	static void Init();
 	 static void Write(const TDesC& aDes);
 	 static void Write8(const TDesC8& aDes);
 	 static void Printf(TRefByValue<const TDesC> aFmt, ...);

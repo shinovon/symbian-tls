@@ -6,7 +6,6 @@ EPOCALLOWDLLDATA
 CAPABILITY ALL -Tcb
 VENDORID 0x70000001
 SMPSAFE
-#include <comms-infras/commsdebugutility.mmh> 
 #endif
 
 SOURCEPATH	../src

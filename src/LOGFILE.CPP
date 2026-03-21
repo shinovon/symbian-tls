@@ -22,20 +22,54 @@
 #endif
 #include "LOGFILE.H"
 
-#if defined(__TRACEFILE__) && (defined(EKA2) || defined(__WINSCW__))
+#if defined(__TRACEFILE__)
 
 const TInt KHexDumpWidth = 16;
 
+#if !defined __WINSCW__ && !defined EKA2 || 1
+#define DYNAMIC
 
+static void(*Logger_Write16)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC16& );
+static void(*Logger_Write8)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC8& );
+#endif
+
+
+
+void Log::Init()
+{
+#ifdef DYNAMIC
+	RLibrary lib;
+	if (lib.Load(_L("comsdbgutil.dll")) == KErrNone) {
+		Logger_Write16 = (void(*)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC16& ))lib.Lookup(12);
+		Logger_Write8 = (void(*)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC8& ))lib.Lookup(24);
+	} else {
+		Logger_Write16 = NULL;
+		Logger_Write8 = NULL;
+	}
+	lib.Close();
+#endif
+}
 
 void Log::Write(const TDesC& aDes)
 	{
+#ifdef DYNAMIC
+	if (Logger_Write16 != NULL) {
+		Logger_Write16(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+	}
+#else
 	RFileLogger::Write(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+#endif
 	}
 
 void Log::Write8(const TDesC8& aDes)
 	{
+#ifdef DYNAMIC
+	if (Logger_Write8 != NULL) {
+		Logger_Write8(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+	}
+#else
 	RFileLogger::Write(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+#endif
 	}
 
 

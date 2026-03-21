@@ -29,6 +29,9 @@ static TBool psaInitState = EFalse;
 
 #ifndef EKA2
 TInt E32Dll(TDllReason) {
+#if defined(__TRACEFILE__)
+	Log::Init();
+#endif
 	return KErrNone;
 }
 #endif

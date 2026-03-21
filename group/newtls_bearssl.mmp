@@ -3,9 +3,6 @@ TARGET        ssl.dll
 #include "newtls.mmh"
 
 LIBRARY estlib.lib
-#ifdef WINSCW
-LIBRARY comsdbgutil.lib
-#endif
 
 #ifdef EKA2
 SYSTEMINCLUDE /epoc32/include/bearssl
