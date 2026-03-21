@@ -26,9 +26,10 @@
 
 const TInt KHexDumpWidth = 16;
 
-#if !defined __WINSCW__ && !defined EKA2 || 1
+#if !defined __WINSCW__ && !defined EKA2 && 0
 #define DYNAMIC
 
+// can't have wsd in eka1, need to use dll tls..
 static void(*Logger_Write16)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC16& );
 static void(*Logger_Write8)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC8& );
 #endif
