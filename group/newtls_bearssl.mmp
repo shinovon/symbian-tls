@@ -1,4 +1,8 @@
+#ifdef EKA2
+TARGET ssl_bearssl.dll
+#else
 TARGET        ssl.dll
+#endif
 
 #include "newtls.mmh"
 

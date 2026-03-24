@@ -6,6 +6,6 @@ PRJ_MMPFILES
 newtls.mmp
 newtls_static.mmp
 #else
-newtls_bearssl.mmp
 ssladaptor.mmp
 #endif
+newtls_bearssl.mmp
