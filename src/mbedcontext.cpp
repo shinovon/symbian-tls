@@ -94,6 +94,13 @@ static unsigned x509_end_chain(const br_x509_class** ctx) {
 static const br_x509_pkey* x509_get_pkey(const br_x509_class*const* ctx, unsigned* usages) {
 	return br_x509_minimal_vtable.get_pkey(ctx, usages);
 }
+
+static int ssl_time_check_callback(void* ctx,
+	uint32_t not_before_days, uint32_t not_before_secs,
+	uint32_t not_after_days,  uint32_t not_after_secs) 
+{
+	return 0;
+}
 #else
 #include <mbedtls/debug.h>
 
@@ -131,6 +138,7 @@ CMbedContext::CMbedContext()
 		}
 		br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
 	}
+	br_x509_minimal_set_time_callback(&xc, NULL, ssl_time_check_callback);
 	
 	cert_verifier_vtable.context_size = sizeof(br_x509_minimal_context);
 	cert_verifier_vtable.start_chain = x509_start_chain;
