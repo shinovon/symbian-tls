@@ -16,7 +16,7 @@
 #if !defined(__SSL_LOGFILE_H__)
 #define __SSL_LOGFILE_H__
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) || 1
 #include <flogger.h>
 #define __TRACEFILE__
 #endif

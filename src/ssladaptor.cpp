@@ -11,14 +11,14 @@ TInt E32Dll(TDllReason) {
 #endif
 
 class CSslAdaptor {
-	IMPORT_C MSecureSocket* NewL(RSocket& aSocket, const TDesC& aProtocol);
-	IMPORT_C void UnloadDll(TAny* aPtr);
+public:
+	static IMPORT_C MSecureSocket* NewL(RSocket& aSocket, const TDesC& aProtocol);
 };
 
 EXPORT_C MSecureSocket* CSslAdaptor::NewL(RSocket& aSocket, const TDesC& aProtocol) {
 	return CTlsConnection::NewL(aSocket, aProtocol);
 }
 
-EXPORT_C void CSslAdaptor::UnloadDll(TAny* aPtr) {
+EXPORT_C void UnloadDll(TAny* aPtr) {
 	return CTlsConnection::UnloadDll(aPtr);
 }
