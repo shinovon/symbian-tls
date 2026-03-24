@@ -98,6 +98,9 @@ EXPORT_C void CTlsConnection::UnloadDll(TAny* /*aPtr*/)
 		psaInitState = EFalse;
 	}
 #endif
+#if defined(__TRACEFILE__)
+	Log::Close();
+#endif
 }
 
 CTlsConnection::~CTlsConnection()

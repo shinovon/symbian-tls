@@ -38,15 +38,16 @@ _LIT(KSSLLogDir,"SSL");
 class CSSLProviderBase;
 class RFile;
 class Log
-	{
+{
 public:
 	static void Init();
-	 static void Write(const TDesC& aDes);
-	 static void Write8(const TDesC8& aDes);
-	 static void Printf(TRefByValue<const TDesC> aFmt, ...);
-	 static void Printf8(TRefByValue<const TDesC8> aFmt, ...);
-	 static void HexDump(const TText* aHeader, const TText* aMargin, const TUint8* aPtr, TInt aLen);
-	};
+	static void Close();
+	static void Write(const TDesC& aDes);
+	static void Write8(const TDesC8& aDes);
+	static void Printf(TRefByValue<const TDesC> aFmt, ...);
+	static void Printf8(TRefByValue<const TDesC8> aFmt, ...);
+	static void HexDump(const TText* aHeader, const TText* aMargin, const TUint8* aPtr, TInt aLen);
+};
 
 #endif // __TRACEFILE__
 

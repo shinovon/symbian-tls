@@ -26,36 +26,52 @@
 
 const TInt KHexDumpWidth = 16;
 
-#if !defined __WINSCW__ && !defined EKA2 && 0
+#if 1
 #define DYNAMIC
-
-// can't have wsd in eka1, need to use dll tls..
-static void(*Logger_Write16)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC16& );
-static void(*Logger_Write8)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC8& );
+struct LogGlobal {
+	RLibrary lib;
+	void(*Logger_Write16)(const TDesC&, const TDesC&, TFileLoggingMode, const TDesC16&);
+	void(*Logger_Write8)(const TDesC&, const TDesC&, TFileLoggingMode, const TDesC8&);
+};
 #endif
-
-
 
 void Log::Init()
 {
 #ifdef DYNAMIC
-	RLibrary lib;
-	if (lib.Load(_L("comsdbgutil.dll")) == KErrNone) {
-		Logger_Write16 = (void(*)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC16& ))lib.Lookup(12);
-		Logger_Write8 = (void(*)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC8& ))lib.Lookup(24);
+	LogGlobal* global = new LogGlobal;
+	if (!global) return;
+	
+	if (global->lib.Load(_L("comsdbgutil.dll")) == KErrNone) {
+		global->Logger_Write16 = (void(*)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC16& ))global->lib.Lookup(12);
+		global->Logger_Write8 = (void(*)(const TDesC& , const TDesC& , TFileLoggingMode , const TDesC8& ))global->lib.Lookup(24);
 	} else {
-		Logger_Write16 = NULL;
-		Logger_Write8 = NULL;
+		global->Logger_Write16 = NULL;
+		global->Logger_Write8 = NULL;
 	}
-	lib.Close();
+//	global->lib.Close();
+	
+	Dll::SetTls(global);
+#endif
+}
+
+void Log::Close()
+{
+#ifdef DYNAMIC
+	LogGlobal* global = (LogGlobal*)Dll::Tls();
+	if (global) {
+		global->lib.Close();
+		delete global;
+		Dll::SetTls(NULL);
+	}
 #endif
 }
 
 void Log::Write(const TDesC& aDes)
 	{
 #ifdef DYNAMIC
-	if (Logger_Write16 != NULL) {
-		Logger_Write16(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+	LogGlobal* global = (LogGlobal*)Dll::Tls();
+	if (global && global->Logger_Write16 != NULL) {
+		global->Logger_Write16(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
 	}
 #else
 	RFileLogger::Write(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
@@ -65,8 +81,9 @@ void Log::Write(const TDesC& aDes)
 void Log::Write8(const TDesC8& aDes)
 	{
 #ifdef DYNAMIC
-	if (Logger_Write8 != NULL) {
-		Logger_Write8(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
+	LogGlobal* global = (LogGlobal*)Dll::Tls();
+	if (global && global->Logger_Write8 != NULL) {
+		global->Logger_Write8(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
 	}
 #else
 	RFileLogger::Write(KSSLLogDir,KSSLLogFileName,EFileLoggingModeAppend,aDes);
