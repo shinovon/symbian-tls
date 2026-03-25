@@ -173,7 +173,7 @@ CTlsConnection::CTlsConnection() : CActive(EPriorityHigh),
 {
 }
 
-void CTlsConnection::ConstructL(RSocket& aSocket, const TDesC& aProtocol)
+void CTlsConnection::ConstructL(RSocket& aSocket, const TDesC& /*aProtocol*/)
 /** 
  * Two-phase constructor.
  * Called by CTlsConnection::NewL() to initialise all the 
@@ -199,7 +199,7 @@ void CTlsConnection::ConstructL(RSocket& aSocket, const TDesC& aProtocol)
 	Init();
 }
 
-void CTlsConnection::ConstructL(MGenericSecureSocket& aSocket, const TDesC& aProtocol)
+void CTlsConnection::ConstructL(MGenericSecureSocket& aSocket, const TDesC& /*aProtocol*/)
 /** 
  * Two-phase constructor.
  * Called by CTlsConnection::NewL() to initialise all the 

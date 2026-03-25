@@ -733,9 +733,10 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 	if (res != 0) {
 		ret = MapError(res, KErrSSLAlertHandshakeFailure);
 		LOG(Log::Printf(_L("CHandshakeEvent::ProcessL() Err %x"), -res));
-	} else {
+	}
+#if !defined BEARSSL
+	else {
 		TUint8* data = 0;
-#ifdef EKA2
 		TInt len = iMbedContext.GetPeerCert(data);
 		TBool supportedCert = EFalse;
 		if (len != -1) {
@@ -748,7 +749,6 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 				supportedCert = ETrue;
 			);
 		}
-#endif
 #ifndef NO_VERIFY
 		res = iMbedContext.Verify();
 		LOG(Log::Printf(_L("Verify result: %d"), res));
@@ -775,6 +775,7 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 #endif
 		if (data) User::Free(data);
 	}
+#endif
 	iHandshaked = ETrue;
 	User::RequestComplete(pStatus, ret);
 	return NULL;
