@@ -47,6 +47,9 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
  */
 {
 	LOG(Log::Printf(_L("CTlsConnection::NewL(RSocket)")));
+#if defined(__TRACEFILE__) && defined EKA2
+	Log::Init();
+#endif
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 	if (!psaInitState) {
 		psaInitState = ETrue;
@@ -74,6 +77,9 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, cons
  */
 {
 	LOG(Log::Printf(_L("CTlsConnection::NewL(MGenericSecureSocket)")));
+#if defined(__TRACEFILE__) && defined EKA2
+	Log::Init();
+#endif
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 	if (!psaInitState) {
 		psaInitState = ETrue;

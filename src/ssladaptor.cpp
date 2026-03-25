@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2026 Arman Jussupgaliyev
+ */
+
 #include <e32base.h>
 #include <ssl.h>
 #define BEARSSL
