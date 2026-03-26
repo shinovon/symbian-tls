@@ -6,6 +6,10 @@ PRJ_MMPFILES
 newtls.mmp
 newtls_static.mmp
 #else
+// 6.1-8.0
+ssl_6.mmp
+// 7.0-8.0
 ssladaptor.mmp
 #endif
-newtls_bearssl.mmp
+// 8.1+
+ssl_bearssl.mmp

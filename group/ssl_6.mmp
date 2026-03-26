@@ -1,0 +1,21 @@
+TARGET ssl.dll
+DEFFILE ssl_eka1.def
+
+#include "newtls.mmh"
+
+LIBRARY estlib.lib
+
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\libc
+SYSTEMINCLUDE ..\..\bearssl\inc
+
+SOURCEPATH ../src
+SOURCE sslfactory.cpp
+
+STATICLIBRARY bearssl.lib
+
+SOURCEPATH ../src
+SOURCE StateMachine.cpp
+
+MACRO BEARSSL
+MACRO NO_VERIFY

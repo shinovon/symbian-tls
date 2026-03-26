@@ -1,0 +1,6 @@
+EXPORTS
+	NewCSSLFactoryL__Fv @ 1 NONAME R3UNUSED ; NewCSSLFactoryL(void)
+	NewL__14CTlsConnectionR20MGenericSecureSocketRC7TDesC16 @ 2 NONAME R3UNUSED ; CTlsConnection::NewL(MGenericSecureSocket &, TDesC16 const &)
+	NewL__14CTlsConnectionR7RSocketRC7TDesC16 @ 3 NONAME R3UNUSED ; CTlsConnection::NewL(RSocket &, TDesC16 const &)
+	UnloadDll__14CTlsConnectionPv @ 4 NONAME R3UNUSED ; CTlsConnection::UnloadDll(void *)
+

@@ -1,3 +1,4 @@
+//ssladaptor.dll for 7.0-8.0
 TARGET ssladaptor.dll
 TARGETTYPE dll
 UID 0x101f35f0 0x101f35ee

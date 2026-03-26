@@ -49,7 +49,6 @@ START WINS
 END
 
 LINKAS ssl.dll
-DEFFILE ssl.def
 
 #ifdef ARMCC_4_0
 ARMFPU softvfp
