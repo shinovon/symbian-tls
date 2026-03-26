@@ -46,10 +46,10 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
  * @return A pointer to a newly created Secure socket object.
  */
 {
-	LOG(Log::Printf(_L("CTlsConnection::NewL(RSocket)")));
 #if defined(__TRACEFILE__) && defined EKA2
 	Log::Init();
 #endif
+	LOG(Log::Printf(_L("CTlsConnection::NewL(RSocket)")));
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 	if (!psaInitState) {
 		psaInitState = ETrue;

@@ -1,7 +1,7 @@
-# changes between releases
+# SSL API changes between releases
 
 ## ER5
-- added ssl.dll, which is loaded dynamically in tcpip.prt (to be confirmed). ssl is enabled by calling `SetOpt` with `KSoSecureSocket` in `RSocket`
+- added ssl.dll with 1 export: `NewSSLFactoryL`, which is loaded dynamically in tcpip.prt (to be confirmed). ssl is enabled by calling `SetOpt` with `KSoSecureSocket` in `RSocket`
 
 **not supported**
 
@@ -25,23 +25,28 @@ in `MSSLSocketNotify`
 to `void ProcessL(const TDesC8&)`
 in `CSSLProviderBase`
 - ssladaptor.dll added with 2 exports: `CSslAdaptor::NewL(RSocket&, TDesC16 const&)`, `UnloadDll`, which is loaded dynamically in securesocket.dll (currently only supporting this)
+- `KSoSecureSocket` is deprecated
 
-## 7.1 (UIQ2), 7.0 (S60v2.1, S80v2, S90)
+## 7.0 (S60v2.1, S80v2, S90, UIQ2)
 - ssl.h replaces `void SSLDeliver(const TDesC8&, TUint)`
 with `void SSLDeliver(const TDesC8&)`
 in `MSSLSocketNotify`
+
+**not tested on uiq2**
 
 ## 8.0 (S60v2.6)
 - ssl.h replaces `void SSLDeliver(const TDesC8&)`
   with `void SSLDeliver(const TDesC8&, TUint)`
   in `MSSLSocketNotify`
 
+**currently does not work on hardware**
+
 ## 8.1 (S60v2.8)
 - ssl.dll removed, ssladaptor.dll is now new ssl.dll
-- removed 2nd export: `UnloadDll`
+- removed 2nd export
 
 ## 9.1
-- 2nd ssl.dll export added: `UnloadDll`
+- 2nd ssl.dll export added: `CTlsConnection::UnloadDll(TAny*)`
 
 (mbedtls is used from there)
 
