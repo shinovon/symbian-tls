@@ -38,7 +38,10 @@ struct LogGlobal {
 void Log::Init()
 {
 #ifdef DYNAMIC
-	LogGlobal* global = new LogGlobal;
+	LogGlobal* global = (LogGlobal*)Dll::Tls();
+	if (global) return;
+	
+	global = new LogGlobal;
 	if (!global) return;
 	
 	if (global->lib.Load(_L("comsdbgutil.dll")) == KErrNone) {
