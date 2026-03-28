@@ -122,22 +122,6 @@ CMbedContext::CMbedContext()
 	br_ssl_client_init_full(&sc, &xc, NULL, 0);
 	iResetDone = false;
 
-	{
-		char buf[32];
-		TTime now;
-		now.HomeTime();
-		TInt64 seed64 = now.Int64();
-		
-		TUint32 seed1 = I64LOW(seed64) ^ User::TickCount();
-		TUint32 seed2 = I64HIGH(seed64) ^ (TUint32)&buf;
-
-		for (int i = 0; i < 8; i++) {
-			seed1 = (seed1 * 1103515245) + 12345;
-			seed2 = (seed2 * 1103515245) + 12345;
-			((TUint32*)buf)[i] = seed1 ^ seed2;
-		}
-		br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
-	}
 	br_x509_minimal_set_time_callback(&xc, NULL, ssl_time_check_callback);
 	
 	cert_verifier_vtable.context_size = sizeof(br_x509_minimal_context);
@@ -196,6 +180,20 @@ TInt CMbedContext::InitSsl()
 	
 #ifdef BEARSSL
 	br_ssl_engine_set_versions(&sc.eng, BR_TLS10, BR_TLS12);
+	char buf[32];
+	TTime now;
+	now.HomeTime();
+	TInt64 seed64 = now.Int64();
+	
+	TUint32 seed1 = I64LOW(seed64) ^ User::TickCount();
+	TUint32 seed2 = I64HIGH(seed64) ^ (TUint32)&buf;
+
+	for (int i = 0; i < 8; i++) {
+		seed1 = (seed1 * 1103515245) + 12345;
+		seed2 = (seed2 * 1103515245) + 12345;
+		((TUint32*)buf)[i] = seed1 ^ seed2;
+	}
+	br_ssl_engine_inject_entropy(&sc.eng, buf, 32);
 #else
 	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
 									 NULL, 0)) != 0) {

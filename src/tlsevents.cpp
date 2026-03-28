@@ -155,6 +155,8 @@ void CBio::Recv(TRequestStatus* aStatus)
 	if (iReadLength > iDataIn->Des().MaxLength()) {
 		// grow buffer
 		LOG(Log::Printf(_L("Reconstructing input buffer")));
+		// TODO: use realloc?
+//		iDataIn->ReAllocL(iReadLength);
 		delete iDataIn;
 		iDataIn = NULL;
 		iDataIn = HBufC8::NewL(iReadLength);

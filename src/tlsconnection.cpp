@@ -722,6 +722,7 @@ TInt CTlsConnection::SetOpt(TUint aOptionName,TUint aOptionLevel, const TDesC8& 
 				TPtr des = buf->Des();
 				des.Copy(aOption); 
 				
+				// TODO: inetprotutil available only from 7.0
 				HBufC8* converted = EscapeUtils::ConvertFromUnicodeToUtf8L(buf->Des());
 				
 				char* res = new char[converted->Length() + 1];
