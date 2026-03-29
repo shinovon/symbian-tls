@@ -20,9 +20,6 @@
 static TBool psaInitState = EFalse;
 #endif
 
-#ifdef PIPS
-#include <wchar.h>
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include <escapeutils.h>

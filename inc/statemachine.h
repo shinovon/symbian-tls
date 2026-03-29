@@ -26,6 +26,9 @@
 #ifndef _STATEMACHINE_H_
 #define _STATEMACHINE_H_
 
+#define SM_IMPORT_C
+#define SM_EXPORT_C
+
 class CAsynchEvent;
 
 class CStateMachine;
@@ -62,7 +65,7 @@ class MStateMachineNotify
 class CStateMachine : public CActive
    {
    public:
-      IMPORT_C ~CStateMachine();
+      SM_IMPORT_C ~CStateMachine();
 
       TInt LastError() const;
       void SetLastError( TInt aLastError );
@@ -79,23 +82,23 @@ class CStateMachine : public CActive
       void RegisterNotify( MStateMachineNotify* aStateMachineNotify );
       void DeRegisterNotify( MStateMachineNotify* aStateMachineNotify );
    
-      IMPORT_C void Start( TRequestStatus* aClientStatus, CAsynchEvent* aErrorEvent, MStateMachineNotify* aStateMachineNotify
+      SM_IMPORT_C void Start( TRequestStatus* aClientStatus, CAsynchEvent* aErrorEvent, MStateMachineNotify* aStateMachineNotify
          /*the object is NOT taking ownership of the params*/ );
       //CActive::Cancel method should not be used
-      IMPORT_C void Cancel( TInt aLastError );
+      SM_IMPORT_C void Cancel( TInt aLastError );
 
-      IMPORT_C HBufC8* ReAllocL( TInt aNewLength );
+      SM_IMPORT_C HBufC8* ReAllocL( TInt aNewLength );
       HBufC8* Fragment() const;
 
    protected:
-      IMPORT_C CStateMachine();
+      SM_IMPORT_C CStateMachine();
 
-	   IMPORT_C virtual void DoCancel();
-	   IMPORT_C virtual void RunL();
-	   IMPORT_C virtual TInt RunError(TInt aError);
+	   SM_IMPORT_C virtual void DoCancel();
+	   SM_IMPORT_C virtual void RunL();
+	   SM_IMPORT_C virtual TInt RunError(TInt aError);
 
-      IMPORT_C void OnError();
-      IMPORT_C virtual void OnCompletion();
+      SM_IMPORT_C void OnError();
+      SM_IMPORT_C virtual void OnCompletion();
 
    protected:
       CAsynchEvent* iActiveEvent; //referenced not owned

@@ -20,14 +20,6 @@
 */
 
 #include "AsynchEvent.h"
-
-#if 1
-#undef EXPORT_C
-#define EXPORT_C
-#undef IMPORT_C
-#define IMPORT_C
-#endif
-
 #include "StateMachine.h"
 
 
@@ -37,18 +29,18 @@
 _LIT(KSpecAssert_ElemStateMachStM, "ElemStateMachStM");
 #endif
 
-EXPORT_C CStateMachine::CStateMachine() :
+SM_EXPORT_C CStateMachine::CStateMachine() :
    CActive( EPriorityStandard )
    {
 	CActiveScheduler::Add(this);
    }
 
-EXPORT_C CStateMachine::~CStateMachine()
+SM_EXPORT_C CStateMachine::~CStateMachine()
    {
    delete iFragment;
    }
 
-EXPORT_C HBufC8* CStateMachine::ReAllocL( TInt aNewLength )
+SM_EXPORT_C HBufC8* CStateMachine::ReAllocL( TInt aNewLength )
 /** 
  * Re-allocates the instance fragment
  *
@@ -71,7 +63,7 @@ EXPORT_C HBufC8* CStateMachine::ReAllocL( TInt aNewLength )
    return iFragment;
    }
 
-EXPORT_C void CStateMachine::Start( TRequestStatus* aClientStatus, CAsynchEvent* aErrorEvent, MStateMachineNotify* aStateMachineNotify )
+SM_EXPORT_C void CStateMachine::Start( TRequestStatus* aClientStatus, CAsynchEvent* aErrorEvent, MStateMachineNotify* aStateMachineNotify )
 /** 
  * Starts the state machine
  *
@@ -97,7 +89,7 @@ EXPORT_C void CStateMachine::Start( TRequestStatus* aClientStatus, CAsynchEvent*
    User::RequestComplete( p, KErrNone );
    }
 
-EXPORT_C void CStateMachine::Cancel( TInt aLastError )
+SM_EXPORT_C void CStateMachine::Cancel( TInt aLastError )
 /** 
  * Cancels the state machine with an error
  *
@@ -126,7 +118,7 @@ EXPORT_C void CStateMachine::Cancel( TInt aLastError )
       }
    }
 
-EXPORT_C void CStateMachine::DoCancel()
+SM_EXPORT_C void CStateMachine::DoCancel()
 /** 
  * completes the cancel request
  *
@@ -138,7 +130,7 @@ EXPORT_C void CStateMachine::DoCancel()
       }
    }
 
-EXPORT_C void CStateMachine::OnError()
+SM_EXPORT_C void CStateMachine::OnError()
 /** 
  * Called from ::RunL when an error occures
  *
@@ -158,7 +150,7 @@ EXPORT_C void CStateMachine::OnError()
       }
    }
 
-EXPORT_C void CStateMachine::RunL()
+SM_EXPORT_C void CStateMachine::RunL()
 /** 
  * Called on completion of one active event
  *
@@ -189,7 +181,7 @@ EXPORT_C void CStateMachine::RunL()
       }
    }
 
-EXPORT_C TInt CStateMachine::RunError(TInt aError)
+SM_EXPORT_C TInt CStateMachine::RunError(TInt aError)
 /** 
  * RunL left. Complete status with the aError and let RunL function to handle it
  *
@@ -203,7 +195,7 @@ EXPORT_C TInt CStateMachine::RunError(TInt aError)
 	return KErrNone; //no error propagation to central error handler
    }
 
-EXPORT_C void CStateMachine::OnCompletion()
+SM_EXPORT_C void CStateMachine::OnCompletion()
 /** 
  * Called by RunL when the state machine has completed its task.
  *

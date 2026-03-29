@@ -10,6 +10,7 @@ DEFFILE ssl.def
 LIBRARY estlib.lib
 
 #ifdef EKA2
+NOEXPORTLIBRARY
 SYSTEMINCLUDE /epoc32/include/bearssl
 SYSTEMINCLUDE /epoc32/include/libc
 #else
@@ -18,9 +19,6 @@ SYSTEMINCLUDE \epoc32\include\libc
 SYSTEMINCLUDE ..\..\bearssl\inc
 #endif
 STATICLIBRARY bearssl.lib
-
-SOURCEPATH ../src
-SOURCE StateMachine.cpp
 
 MACRO BEARSSL
 MACRO NO_VERIFY

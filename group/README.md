@@ -1,3 +1,7 @@
+# Notes
+
+- StateMachine.cpp is included to avoid linking with netsm.dll, as its .lib is excluded from the most of SDKs.
+
 # SSL API changes between releases
 
 ## ER5

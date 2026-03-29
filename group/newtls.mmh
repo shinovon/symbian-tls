@@ -13,6 +13,7 @@ SOURCE tlsconnection.cpp
 SOURCE mbedcontext.cpp
 SOURCE tlsevents.cpp
 SOURCE LOGFILE.CPP
+SOURCE StateMachine.cpp
 
 USERINCLUDE ../inc
 
@@ -20,8 +21,8 @@ LIBRARY euser.lib
 LIBRARY esock.lib
 LIBRARY insock.lib
 LIBRARY inetprotutil.lib
+LIBRARY efsrv.lib
 #ifdef EKA2
-LIBRARY netsm.lib
 LIBRARY x509.lib
 LIBRARY ctframework.lib
 #endif

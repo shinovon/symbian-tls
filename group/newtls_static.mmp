@@ -6,11 +6,6 @@ NOEXPORTLIBRARY
 
 STATICLIBRARY mbedtls.lib
 
-//LIBRARY libc.lib
-//SYSTEMINCLUDE		/epoc32/include/stdapis
-//SYSTEMINCLUDE		/epoc32/include/stdapis/sys
-//MACRO PIPS
-
 LIBRARY estlib.lib
 SYSTEMINCLUDE		/epoc32/include/libc
 
