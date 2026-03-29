@@ -7,9 +7,7 @@
 #include "logfile.h"
 
 EXPORT_C CSSLFactory* NewCSSLFactoryL() {
-#if defined(__TRACEFILE__)
-	Log::Init();
-#endif
+	LOG(Log::Init());
 	LOG(Log::Printf(_L("NewCSSLFactoryL()")));
 	CSSLFactory* self = new (ELeave) CSSLFactory();
 	CleanupStack::PushL(self);

@@ -26,9 +26,7 @@ static TBool psaInitState = EFalse;
 
 #ifndef EKA2
 TInt E32Dll(TDllReason) {
-#if defined(__TRACEFILE__)
-	Log::Init();
-#endif
+	LOG(Log::Init());
 	return KErrNone;
 }
 #endif
@@ -43,8 +41,8 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aPro
  * @return A pointer to a newly created Secure socket object.
  */
 {
-#if defined(__TRACEFILE__) && defined EKA2
-	Log::Init();
+#if defined(EKA2)
+	LOG(Log::Init());
 #endif
 	LOG(Log::Printf(_L("CTlsConnection::NewL(RSocket)")));
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
@@ -74,8 +72,8 @@ EXPORT_C MSecureSocket* CTlsConnection::NewL(MGenericSecureSocket& aSocket, cons
  */
 {
 	LOG(Log::Printf(_L("CTlsConnection::NewL(MGenericSecureSocket)")));
-#if defined(__TRACEFILE__) && defined EKA2
-	Log::Init();
+#if defined(EKA2)
+	LOG(Log::Init());
 #endif
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
 	if (!psaInitState) {
