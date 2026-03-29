@@ -1,6 +1,10 @@
 # Notes
 
 - StateMachine.cpp is included to avoid linking with netsm.dll, as its .lib is excluded from the most of SDKs.
+- comsdbgutil.dll is linked on runtime in debug build, due to similar reason.
+- EKA1 version (ssl_bearssl.mmp, ssl_6.mmp) uses statically linked bearssl.
+- ssladaptor.mmp is wrapper for dll made with ssl_6.mmp, used on 7.0.
+- ssl_bearssl.mmp can be used on EKA2 if you really want, rename it to ssl.dll after compiling.
 
 # SSL API changes between releases
 

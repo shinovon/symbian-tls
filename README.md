@@ -1,6 +1,6 @@
-# Symbian 9.1+ TLS upgrade
+# Symbian TLS upgrade
 
-*Symbian 7.0+ port is in progress..
+Now supporting Symbian 7.0s and 8.1a!
 
 [MBedTLS for Symbian](https://github.com/shinovon/mbedtls-symbian) (Used for EKA2)<br>
 [BearSSL for Symbian](https://github.com/shinovon/bearssl-symbian) (Used for EKA1)<br>
