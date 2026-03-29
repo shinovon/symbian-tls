@@ -16,10 +16,10 @@ LOCAL_C int send_callback(void *ctx, const unsigned char *buf, size_t len)
 	LOG(Log::Printf(_L("+send_callback %d state: %d"), len, s->iWriteState));
 	
 	if (s->iWriteState == 1) {
-		if (s->iWriteLength != len) {
-			// TODO do partial copy?
-			LOG(Log::Printf(_L("writelength different! %d != "), len, s->iWriteLength));
-		}
+//		if (s->iWriteLength != len) {
+//			// TODO do partial copy?
+//			LOG(Log::Printf(_L("writelength different! %d != %d"), len, s->iWriteLength));
+//		}
 		s->iWriteState = 0;
 		LOG(Log::Printf(_L("-send_callback %d"), len));
 		return len;
@@ -340,6 +340,8 @@ LOCAL_C TInt MapError(TInt aErr, TInt aDefault) {
 			return KErrSSLBadProtocolVersion;
 		case -BR_ERR_BAD_HANDSHAKE:
 			return KErrSSLAlertHandshakeFailure;
+		case MBEDTLS_ERR_SSL_CONN_EOF:
+			return KErrEof;
 #else
 		case MBEDTLS_ERR_SSL_INVALID_MAC:
 			return KErrSSLBadMAC;
@@ -367,12 +369,6 @@ LOCAL_C TInt MapError(TInt aErr, TInt aDefault) {
 			return KErrSSLAlertHandshakeFailure;
 #endif
 		default:
-#ifdef BEARSSL
-//			if (aErr <= -BR_ERR_RECV_FATAL_ALERT && aErr > -(BR_ERR_RECV_FATAL_ALERT + 256)) {
-//				return KErrSSLReceivedAlert;
-//			}
-			if (aErr == MBEDTLS_ERR_SSL_CONN_EOF) return KErrEof;
-#endif
 			return aDefault;
 	}
 }
@@ -410,6 +406,7 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		User::RequestComplete(pStatus, KErrNone);
 		return this;
 	}
+#ifndef BEARSSL
 	if (res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 		// this return code is specific mbedtls 3.4.1 version
 		// TODO: handle it?
@@ -417,6 +414,7 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		User::RequestComplete(pStatus, KErrNone);
 		return this;
 	}
+#endif
 	if (res == 0 || res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || res == MBEDTLS_ERR_SSL_CONN_EOF) {
 		ret = KErrEof;
 		LOG(Log::Printf(_L("Read eof")));
@@ -585,18 +583,20 @@ CAsynchEvent* CSendEvent::ProcessL(TRequestStatus& aStatus)
 			return this;
 		}
 #ifdef BEARSSL
+		// bearssl implementation returns length of acquired data instead of want_write, so we have to check write state ourselves.
 		if (iBio.iWriteState == 2) {
 			iCurrentPos += res;
 			iBio.Send(&aStatus);
 			return this;
 		}
-#endif
+#else
 		if (res == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
-			res == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS || 
+			res == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS ||
 			res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 			User::RequestComplete(pStatus, KErrNone);
 			return this;
 		}
+#endif
 		if (res < 0) {
 			ret = MapError(res, res);
 			LOG(Log::Printf(_L("Write error: %x"), -res));
@@ -725,12 +725,14 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 		iBio.Send(&aStatus);
 		return this;
 	}
+#ifndef BEARSSL
 	if (res == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
-		res == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS || 
+		res == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS ||
 		res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 		User::RequestComplete(pStatus, KErrNone);
 		return this;
 	}
+#endif
 	TInt ret = KErrNone;
 	if (res != 0) {
 		ret = MapError(res, KErrSSLAlertHandshakeFailure);

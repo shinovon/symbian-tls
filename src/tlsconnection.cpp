@@ -29,6 +29,26 @@ TInt E32Dll(TDllReason) {
 	LOG(Log::Init());
 	return KErrNone;
 }
+
+#ifdef SSLADAPTOR
+class CSslAdaptor {
+public:
+	static IMPORT_C MSecureSocket* NewL(RSocket& aSocket, const TDesC& aProtocol);
+};
+
+EXPORT_C MSecureSocket* CSslAdaptor::NewL(RSocket& aSocket, const TDesC& aProtocol) {
+	return CTlsConnection::NewL(aSocket, aProtocol);
+}
+
+EXPORT_C void UnloadDll(TAny* aPtr) {
+	return CTlsConnection::UnloadDll(aPtr);
+}
+
+// prevent exporting below functions
+#undef EXPORT_C
+#define EXPORT_C
+
+#endif
 #endif
 
 EXPORT_C MSecureSocket* CTlsConnection::NewL(RSocket& aSocket, const TDesC& aProtocol)

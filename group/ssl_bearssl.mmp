@@ -1,23 +1,24 @@
 #ifdef EKA2
 TARGET ssl_bearssl.dll
-#else
-TARGET ssl_81.dll
-#endif
-DEFFILE ssl.def
 
-#include "newtls.mmh"
-
-LIBRARY estlib.lib
-
-#ifdef EKA2
 NOEXPORTLIBRARY
 SYSTEMINCLUDE /epoc32/include/bearssl
 SYSTEMINCLUDE /epoc32/include/libc
 #else
+TARGET ssl.dll
+UID 0x1000183d 0x10001842
+
 SYSTEMINCLUDE \epoc32\include
 SYSTEMINCLUDE \epoc32\include\libc
 SYSTEMINCLUDE ..\..\bearssl\inc
 #endif
+
+#include "newtls.mmh"
+
+DEFFILE ssl.def
+
+LIBRARY estlib.lib
+
 STATICLIBRARY bearssl.lib
 
 MACRO BEARSSL

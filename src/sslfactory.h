@@ -11,8 +11,8 @@
 class CSSLProviderImpl : public CSSLProviderBase {
 public:
 	CSSLProviderImpl(CSSLFactory& aFactory) : CSSLProviderBase(aFactory) {}
-    ~CSSLProviderImpl();
-    
+	~CSSLProviderImpl();
+
 	const TInt GetOption(TUint level, TUint name, TDes8& anOption);
 	void Ioctl(TUint level, TUint name, TDes8* anOption);
 	void CancelIoctl(TUint aLevel, TUint aName);

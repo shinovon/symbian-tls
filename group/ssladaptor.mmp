@@ -1,24 +1,17 @@
-//ssladaptor.dll for 7.0-8.0
 TARGET ssladaptor.dll
-TARGETTYPE dll
+DEFFILE ssladaptor.def
 UID 0x101f35f0 0x101f35ee
 
-SOURCEPATH ../src
-SOURCE ssladaptor.cpp
+#include "newtls.mmh"
 
-USERINCLUDE ../inc
-
-#ifdef EKA2
-SYSTEMINCLUDE /epoc32/include
-SYSTEMINCLUDE /epoc32/include/libc
-SYSTEMINCLUDE /epoc32/include/platform
-#else
 SYSTEMINCLUDE \epoc32\include
 SYSTEMINCLUDE \epoc32\include\libc
-#endif
+SYSTEMINCLUDE ..\..\bearssl\inc
 
-LIBRARY	euser.lib
-LIBRARY ssl.lib
+LIBRARY estlib.lib
 
-DEFFILE ssladaptor.def
+STATICLIBRARY bearssl.lib
 
+MACRO BEARSSL
+MACRO NO_VERIFY
+MACRO SSLADAPTOR

@@ -6,7 +6,7 @@
 #include "LOGFILE.h"
 #ifdef BEARSSL
 #include <stdlib.h>
-//#include "certs.h"
+//#include "certs.h" // use `brssl -ta cacert.pem` to generate certificates
 
 static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
 	int err = br_ssl_engine_last_error(eng);
@@ -15,7 +15,7 @@ static TInt get_last_bearssl_error(br_ssl_engine_context* eng) {
 }
 
 int CMbedContext::Pump(unsigned target) {
-	// copied from run_until
+	// copied from run_until in ssl_io.c
 	for (;;) {
 		unsigned state;
 
@@ -87,6 +87,8 @@ static void x509_start_chain(const br_x509_class** ctx, const char* server_name)
 
 static unsigned x509_end_chain(const br_x509_class** ctx) {
 	(void) br_x509_minimal_vtable.end_chain(ctx);
+	
+	// deliberately ignoring certificate errors, since cacert storage is not yet implemented
 
 	return 0;
 }
@@ -99,6 +101,7 @@ static int ssl_time_check_callback(void* ctx,
 	uint32_t not_before_days, uint32_t not_before_secs,
 	uint32_t not_after_days,  uint32_t not_after_secs) 
 {
+	// TODO
 	return 0;
 }
 #else
@@ -118,7 +121,7 @@ static void my_debug(void *ctx, int level,
 CMbedContext::CMbedContext()
 {
 #ifdef BEARSSL
-	//br_ssl_client_init_full(&sc, &xc, TAs, TAs_NUM);
+	//br_ssl_client_init_full(&sc, &xc, TAs, TAs_NUM); // uncomment if you include certs.h
 	br_ssl_client_init_full(&sc, &xc, NULL, 0);
 	iResetDone = false;
 
@@ -327,7 +330,6 @@ TInt CMbedContext::Verify()
 TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
-	
 	int r = Pump(BR_SSL_RECVAPP); 
 	if (r < 0) return r;
 		
@@ -387,7 +389,7 @@ TInt CMbedContext::SslCloseNotify()
 {
 #ifdef BEARSSL
 	br_ssl_engine_close(&sc.eng);
-	//Pump(this, &sc, &ioc);
+	//Pump();
 	return 0;
 #else
 	int ret;

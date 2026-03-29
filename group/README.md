@@ -2,14 +2,13 @@
 
 - StateMachine.cpp is included to avoid linking with netsm.dll, as its .lib is excluded from the most of SDKs.
 - comsdbgutil.dll is linked on runtime in debug build, due to similar reason.
-- EKA1 version (ssl_bearssl.mmp, ssl_6.mmp) uses statically linked bearssl.
-- ssladaptor.mmp is wrapper for dll made with ssl_6.mmp, used on 7.0.
+- EKA1 version (ssl_bearssl.mmp, ssladaptor.mmp) uses statically linked bearssl.
 - ssl_bearssl.mmp can be used on EKA2 if you really want, rename it to ssl.dll after compiling.
 
 # SSL API changes between releases
 
 ## ER5
-- added ssl.dll with 1 export: `NewSSLFactoryL`, which is loaded dynamically in tcpip.prt (to be confirmed). ssl is enabled by calling `SetOpt` with `KSoSecureSocket` in `RSocket`
+- added ssl.dll with 1 export: `NewSSLFactoryL`, which is loaded dynamically in tcpip.prt. ssl is enabled by calling `SetOpt` with `KSoSecureSocket` in `RSocket`
 
 **not supported**
 
@@ -20,7 +19,7 @@ in `CSSLProviderBase`
 
 **not supported**
 
-## 6.1 (S60v1)
+## 6.1 (S60v0.9)
 - ssl.h adds `void SSLDisconnectIndication(TInt)`
 before `void SSLIoctlComplete(TDesC8*)`
 in `MSSLSocketNotify`
@@ -33,7 +32,10 @@ in `MSSLSocketNotify`
 to `void ProcessL(const TDesC8&)`
 in `CSSLProviderBase`
 - ssladaptor.dll added with 2 exports: `CSslAdaptor::NewL(RSocket&, TDesC16 const&)`, `UnloadDll`, which is loaded dynamically in securesocket.dll (currently only supporting this)
-- `KSoSecureSocket` is deprecated
+- `KSoSecureSocket` is deprecated, ssl.dll is no longer used directly
+
+## N-Gage QD, S60v1.2 SDK
+- added 7.0 features subset: ssl70.dll, ssladaptor.dll, securesocket.dll, inetprotutil.dll.
 
 ## 7.0 (S60v2.1, S80v2, S90, UIQ2)
 - ssl.h replaces `void SSLDeliver(const TDesC8&, TUint)`
