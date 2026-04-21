@@ -1,4 +1,4 @@
-TARGET        ssl.dll
+TARGET ssl.dll
 
 #include "newtls.mmh"
 

@@ -245,6 +245,7 @@ TInt CMbedContext::InitSsl()
 
 void CMbedContext::SetHostname(const char* aHostname)
 {
+	LOG(Log::Printf8(_L8("Set hostname: %s"), aHostname));
 	hostname = aHostname;
 #ifndef BEARSSL
 	mbedtls_ssl_set_hostname(&ssl, aHostname);
