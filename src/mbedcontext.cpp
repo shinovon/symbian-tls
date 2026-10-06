@@ -335,9 +335,7 @@ TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 		
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
 	if (state == BR_SSL_CLOSED) {
-		int err = br_ssl_engine_last_error(&sc.eng);
-		if (err == BR_ERR_OK) return MBEDTLS_ERR_SSL_CONN_EOF;
-		return -err;
+		return get_last_bearssl_error(&sc.eng);
 	}
 	
 	if (r < 0) return r;
