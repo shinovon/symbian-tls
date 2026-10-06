@@ -331,8 +331,7 @@ TInt CMbedContext::Verify()
 TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
-	int r = Pump(BR_SSL_RECVAPP); 
-	if (r < 0) return r;
+	int r = Pump(BR_SSL_RECVAPP);
 		
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
 	if (state == BR_SSL_CLOSED) {
@@ -340,6 +339,8 @@ TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 		if (err == BR_ERR_OK) return MBEDTLS_ERR_SSL_CONN_EOF;
 		return -err;
 	}
+	
+	if (r < 0) return r;
 	
 	size_t rlen;
 	unsigned char* rbuf = br_ssl_engine_recvapp_buf(&sc.eng, &rlen);
@@ -361,12 +362,13 @@ TInt CMbedContext::Write(const unsigned char* aData, TInt aLen)
 {
 #ifdef BEARSSL
    int r = Pump(BR_SSL_SENDAPP);
-   if (r < 0) return r;
 
 	unsigned state = br_ssl_engine_current_state(&sc.eng);
 	if (state == BR_SSL_CLOSED) {
 		return get_last_bearssl_error(&sc.eng);
 	}
+	
+	if (r < 0) return r;
 	
 	size_t wlen = 0;
 	unsigned char* wbuf = br_ssl_engine_sendapp_buf(&sc.eng, &wlen);
