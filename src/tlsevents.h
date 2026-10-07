@@ -288,6 +288,7 @@ protected:
 #endif
 	TBool iInDialog;
 	TBool iHandshaked;
+	TBool iSessionLoaded;
 };
 
 inline void CHandshakeEvent::Set(CStateMachine* aStateMachine)

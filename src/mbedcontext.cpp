@@ -252,11 +252,213 @@ void CMbedContext::SetHostname(const char* aHostname)
 #endif
 }
 
+void CMbedContext::SetPort(int aPort)
+{
+	port = aPort;
+}
+
+TInt CMbedContext::ReadSessions(TSessionRecord* aRecords) {
+	FILE* f = fopen(KSessionFile, "rb");
+	if (f == NULL) {
+		return 0;
+	}
+	
+	fseek(f, 0, SEEK_END);
+	long len = ftell(f);
+	if (len == -1) {
+		fclose(f);
+		return 0;
+	}
+	fseek(f, 0, SEEK_SET);
+	
+	TInt ret = 0;
+	if (fread((unsigned char*)aRecords, 1, len, f) == len) {
+		ret = len / sizeof(TSessionRecord);
+	}
+	
+	fclose(f);
+	return ret;
+}
+
+static bool OpenMutex(RMutex* mutex) {
+	TInt err;
+	do {
+		err = mutex->CreateGlobal(KSessionMutexName);
+		if (err == KErrAlreadyExists) {
+			err = mutex->OpenGlobal(KSessionMutexName);
+		}
+	} while (err == KErrNotFound);
+	return err == KErrNone;
+}
+
+TBool CMbedContext::LoadSession(void* aDataOut, size_t* aLen)
+{
+	if (!hostname || strlen(hostname) >= (size_t) MAX_HOST_LEN)
+		return EFalse;
+
+	RMutex mutex;
+	if (!OpenMutex(&mutex)) return EFalse;
+	mutex.Wait();
+	
+	time_t now = time(NULL);
+	TSessionRecord* records = new TSessionRecord[MAX_SESSIONS];
+	TBool ret = EFalse;
+	if (records) {
+		TInt n = ReadSessions(records);
+		for (TInt i = 0; i < n; ++i) {
+			if (strncmp(records[i].host, hostname, MAX_HOST_LEN) != 0 || records[i].port != port)
+				continue;
+			if (records[i].timestamp + SESSION_TIMEOUT < now || records[i].timestamp > now + SESSION_TIMEOUT)
+				continue; // timed out
+			if (records[i].len > MAX_SESSION_SIZE)
+				break; // should not reach here, just in case
+			
+			*aLen = records[i].len;
+			memcpy(aDataOut, records[i].data, records[i].len);
+			ret = ETrue;
+			break;
+		}
+		delete[] records;
+	}
+	
+	mutex.Signal();
+	mutex.Close();
+	
+	return ret;
+}
+
+void CMbedContext::SaveSession(const void* aData, size_t aLen)
+{
+	if (!hostname || strlen(hostname) >= (size_t) MAX_HOST_LEN || aLen > MAX_SESSION_SIZE)
+		return;
+	
+	RMutex mutex;
+	if (!OpenMutex(&mutex)) return;
+	mutex.Wait();
+	
+	time_t now = time(NULL);
+	TSessionRecord* records = new TSessionRecord[MAX_SESSIONS];
+	if (records) {
+		TInt num = ReadSessions(records);
+		TInt res = -1;
+		time_t time = 0;
+		bool exact = false;
+		for (TInt i = 0; i < num; ++i) {
+			 if (strncmp(records[i].host, hostname, MAX_HOST_LEN) == 0 && records[i].port == port) {
+				 res = i;
+				 exact = true;
+				 break;
+			 }
+			 
+			 if (res == -1 || records[i].timestamp < time) {
+				 res = i;
+				 time = records[i].timestamp;
+			 }
+		}
+		
+		if (!exact) {
+			if (res == -1) {
+				res = 0;
+				num++;
+			} else if (time + SESSION_TIMEOUT > now && num < MAX_SESSIONS) {
+				res = num++;
+			}
+		}
+
+		Mem::FillZ(&records[res], sizeof(TSessionRecord));
+		memcpy(records[res].host, hostname, strlen(hostname));
+		records[res].port = port;
+		records[res].timestamp = now;
+		records[res].len = aLen;
+		memcpy(records[res].data, aData, aLen);
+		
+#ifdef EKA2
+		mkdir(KSessionDir, 0777);
+#endif
+		FILE* f = fopen(KSessionFile, "wb");
+		if (f != NULL) {
+			fwrite((const unsigned char*)records, 1, sizeof(TSessionRecord) * num, f);
+			fflush(f);
+			fclose(f);
+		}
+		delete[] records;
+	}
+	mutex.Signal();
+	mutex.Close();
+}
+
+void CMbedContext::LoadSession()
+{
+#ifndef BEARSSL
+	if (iFlushSession) {
+		iFlushSession = false;
+		return;
+	}
+	
+	mbedtls_ssl_session session;
+	mbedtls_ssl_session_init(&session);
+	
+	unsigned char* data = new unsigned char[MAX_SESSION_SIZE];
+	if (data) {
+		size_t len = 0;
+		if (LoadSession(data, &len)) goto exit;
+		if (mbedtls_ssl_session_load(&session, data, len) != 0) goto exit;
+		mbedtls_ssl_set_session(&ssl, &session);
+		exit:
+		if (data) delete[] data;
+	}
+	mbedtls_ssl_session_free(&session);
+#endif
+}
+
+void CMbedContext::SaveSession()
+{
+	if (iSessionSaved) return;
+	iSessionSaved = true;
+	
+#ifdef BEARSSL
+	br_ssl_session_parameters sp;
+	br_ssl_engine_get_session_parameters(&sc.eng, &sp);
+	if ((!iSessionLoaded || sp.session_id_len != iOfferedIdLen
+		|| Mem::Compare(sp.session_id, sp.session_id_len, iOfferedId, iOfferedIdLen) != 0)
+		&& sp.session_id_len > 0 && hostname && port != 0) {
+		SaveSession(&sp, sizeof sp);
+	}
+#else
+	mbedtls_ssl_session session;
+	mbedtls_ssl_session_init(&session);
+	if (mbedtls_ssl_get_session(&ssl, &session) == 0) {
+		unsigned char* data = new unsigned char[MAX_SESSION_SIZE];
+		if (data) {
+			size_t len;
+			if (mbedtls_ssl_session_save(&session, data, MAX_SESSION_SIZE, &len) == 0) {
+				SaveSession(data, len);
+			}
+			delete[] data;
+		}
+	}
+#endif
+}
+
+void CMbedContext::FlushSession() {
+	iFlushSession = true;
+}
+
 TInt CMbedContext::Handshake()
 {
 #ifdef BEARSSL
 	if (!iResetDone) {
-		br_ssl_client_reset(&sc, hostname, 0);
+		br_ssl_session_parameters sp;
+		int resume = 0;
+		if (!iFlushSession && LoadSession(&sp, NULL) && sp.session_id_len > 0) {
+			br_ssl_engine_set_session_parameters(&sc.eng, &sp);
+			memcpy(iOfferedId, sp.session_id, sp.session_id_len);
+			iOfferedIdLen = sp.session_id_len;
+			iSessionLoaded = true;
+			resume = 1;
+		}
+		iFlushSession = false;
+		br_ssl_client_reset(&sc, hostname, resume);
 		xc.vtable = &cert_verifier_vtable;
 		iResetDone = true;
 	}

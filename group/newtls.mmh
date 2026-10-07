@@ -22,7 +22,6 @@ LIBRARY euser.lib
 LIBRARY esock.lib
 LIBRARY insock.lib
 LIBRARY inetprotutil.lib
-LIBRARY efsrv.lib
 #ifdef EKA2
 LIBRARY x509.lib
 LIBRARY ctframework.lib

@@ -466,8 +466,8 @@ void CTlsConnection::FlushSessionCache()
  * to the client.
  */
 {
-	// TODO session cache
 	LOG(Log::Printf(_L("CTlsConnection::FlushSessionCache()")));
+	iMbedContext->FlushSession();
 }
 
 TInt CTlsConnection::GetOpt(TUint aOptionName,TUint aOptionLevel,TDes8& aOption)

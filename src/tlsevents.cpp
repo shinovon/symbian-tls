@@ -686,6 +686,9 @@ CHandshakeEvent::~CHandshakeEvent()
 
 void CHandshakeEvent::CancelAll()
 {
+	iInDialog = EFalse;
+	iHandshaked = EFalse;
+	iSessionLoaded = EFalse;
 #ifndef NO_VERIFY
 	if (iSecurityDialog) {
 		iSecurityDialog->Cancel();
@@ -715,6 +718,23 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 //		iBio.Recv(&aStatus);
 //		return this;
 //	}
+	
+	if (!iSessionLoaded) {
+		iSessionLoaded = true;
+		
+		TSockAddr addr;
+#ifdef USE_GENERIC_SOCKET
+		if (iBio.iIsGenericSocket) {
+			iBio.iGenericSocket.RemoteName(addr);
+		} else
+#endif
+		{
+			iBio.iSocket.RemoteName(addr);
+		}
+		iMbedContext.SetPort(addr.Port());
+		iMbedContext.LoadSession();
+	}
+	
 	TInt res = iHandshaked ? iMbedContext.Renegotiate() : iMbedContext.Handshake();
 	if (res == MBEDTLS_ERR_SSL_WANT_READ) {
 		iBio.Recv(&aStatus);
@@ -737,6 +757,7 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 		ret = MapError(res, KErrSSLAlertHandshakeFailure);
 		LOG(Log::Printf(_L("CHandshakeEvent::ProcessL() Err %x"), -res));
 	} else {
+		iMbedContext.SaveSession();
 #ifdef BEARSSL
 #ifdef EKA2
 		iBio.iTlsConnection.iServerCert = CX509Certificate::NewL(TPtrC8(stub_der, stub_der_len));

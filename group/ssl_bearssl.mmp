@@ -12,7 +12,7 @@ UID 0x1000183d 0x10001842
 
 SYSTEMINCLUDE \epoc32\include
 SYSTEMINCLUDE \epoc32\include\libc
-SYSTEMINCLUDE ..\..\bearssl\inc
+SYSTEMINCLUDE \epoc32\include\bearssl
 #endif
 
 #include "newtls.mmh"

@@ -6,7 +6,7 @@ UID 0x101f35f0 0x101f35ee
 
 SYSTEMINCLUDE \epoc32\include
 SYSTEMINCLUDE \epoc32\include\libc
-SYSTEMINCLUDE ..\..\bearssl\inc
+SYSTEMINCLUDE \epoc32\include\bearssl
 
 LIBRARY estlib.lib
 

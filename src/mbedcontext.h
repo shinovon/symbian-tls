@@ -5,6 +5,9 @@
 #ifndef MBEDCONTEXT_H
 #define MBEDCONTEXT_H
 #include <e32base.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/stat.h>
 
 #ifdef BEARSSL
 #include <bearssl_ssl.h>
@@ -15,12 +18,45 @@
 #define MBEDTLS_ERR_SSL_CONN_EOF -0x7280
 #define MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY -0x7880
 
+#ifdef EKA2
+static const char* KSessionDir = "C:\\private\\10001842";
+static const char* KSessionFile = "C:\\private\\10001842\\bearssl_sessions.dat";
+#else
+static const char* KSessionFile = "C:\\system\\data\\bearssl_sessions.dat";
+#endif
 #else
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
+
+#ifdef EKA2
+static const char* KSessionDir = "C:\\private\\10001842";
+static const char* KSessionFile = "C:\\private\\10001842\\mbedtls_sessions.dat";
+#else
+static const char* KSessionFile = "C:\\system\\data\\mbedtls_sessions.dat";
 #endif
+#endif
+
+_LIT(KSessionMutexName, "TLSSessionFile");
+
+#define MAX_SESSIONS 8
+#define MAX_HOST_LEN 128
+#define SESSION_TIMEOUT 86400
+
+#ifdef BEARSSL
+#define MAX_SESSION_SIZE (sizeof(br_ssl_session_parameters))
+#else
+#define MAX_SESSION_SIZE 1536
+#endif
+
+struct TSessionRecord {
+	char host[MAX_HOST_LEN];
+	int port;
+	time_t timestamp;
+	size_t len;
+	unsigned char data[MAX_SESSION_SIZE];
+};
 
 class CMbedContext : public CBase {
 public:
@@ -37,6 +73,9 @@ protected:
 	int iLastState;
 	int Pump(unsigned target);
 	br_x509_class cert_verifier_vtable;
+	unsigned char iOfferedId[32];
+	unsigned char iOfferedIdLen;
+	bool iSessionLoaded;
 #else
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
@@ -44,7 +83,10 @@ protected:
 	mbedtls_entropy_context entropy;
 	mbedtls_x509_crt cacert;
 #endif
+	bool iSessionSaved;
+	bool iFlushSession;
 	const char* hostname; // owned
+	int port;
 
 public:
 	// mbedtls_ssl_set_bio
@@ -54,6 +96,7 @@ public:
 
 	// mbedtls_ssl_set_hostname
 	void SetHostname(const char* aHostname);
+	void SetPort(int port);
 	
 	// mbedtls_ssl_handshake
 	TInt Handshake();
@@ -66,9 +109,6 @@ public:
 	
 	// mbedtls_ssl_get_verify_result
 	TInt Verify();
-	
-//	TInt ExportSession(unsigned char *aData, TInt aMaxLen, TUint* aLen);
-//	TInt LoadSession(const unsigned char *aData, TInt aLen);
 	
 	// mbedtls_ssl_read
 	TInt Read(unsigned char* aData, TInt aLen);
@@ -83,5 +123,14 @@ public:
 	TInt Reset();
 	
 	const TUint8* Hostname();
+	
+	void LoadSession();
+	void SaveSession();
+	void FlushSession();
+private:
+	static TInt ReadSessions(TSessionRecord* aRecords);
+	inline TBool LoadSession(void* aDataOut, size_t* aDataLen);
+	inline void SaveSession(const void* aData, size_t aLen);
 };
+
 #endif
