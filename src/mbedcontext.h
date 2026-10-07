@@ -19,10 +19,10 @@
 #define MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY -0x7880
 
 #ifdef EKA2
-static const char* KSessionDir = "C:\\private\\10001842";
-static const char* KSessionFile = "C:\\private\\10001842\\bearssl_sessions.dat";
+#define KSessionDir "C:\\private\\10001842"
+#define KSessionFile "C:\\private\\10001842\\bearssl_sessions.dat"
 #else
-static const char* KSessionFile = "C:\\system\\data\\bearssl_sessions.dat";
+#define KSessionFile "C:\\system\\data\\bearssl_sessions.dat"
 #endif
 #else
 #include <mbedtls/ssl.h>
@@ -31,10 +31,10 @@ static const char* KSessionFile = "C:\\system\\data\\bearssl_sessions.dat";
 #include <mbedtls/net_sockets.h>
 
 #ifdef EKA2
-static const char* KSessionDir = "C:\\private\\10001842";
-static const char* KSessionFile = "C:\\private\\10001842\\mbedtls_sessions.dat";
+#define KSessionDir "C:\\private\\10001842"
+#define KSessionFile "C:\\private\\10001842\\mbedtls_sessions.dat"
 #else
-static const char* KSessionFile = "C:\\system\\data\\mbedtls_sessions.dat";
+#define KSessionFile "C:\\system\\data\\mbedtls_sessions.dat"
 #endif
 #endif
 
