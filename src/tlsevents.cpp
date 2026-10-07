@@ -408,8 +408,8 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 #ifndef BEARSSL
 	if (res == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 		// this return code is specific mbedtls 3.4.1 version
-		// TODO: handle it?
 		LOG(Log::Printf(_L("Ticket received")));
+		iMbedContext.SaveSession(ETrue);
 		User::RequestComplete(pStatus, KErrNone);
 		return this;
 	}

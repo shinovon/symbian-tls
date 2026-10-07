@@ -231,7 +231,7 @@ TInt CMbedContext::InitSsl()
 	mbedtls_debug_set_threshold(999999);
 	mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
 #endif
-	mbedtls_ssl_conf_session_tickets(&conf, 0);
+	mbedtls_ssl_conf_session_tickets(&conf, 1);
 	mbedtls_ssl_conf_renegotiation(&conf, 0);
 	
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
@@ -329,7 +329,7 @@ TBool CMbedContext::LoadSession(void* aDataOut, size_t* aLen)
 
 void CMbedContext::SaveSession(const void* aData, size_t aLen)
 {
-	if (!hostname || strlen(hostname) >= (size_t) MAX_HOST_LEN || aLen > MAX_SESSION_SIZE)
+	if (!hostname || strlen(hostname) >= (size_t) MAX_HOST_LEN || aLen == 0 || aLen > MAX_SESSION_SIZE)
 		return;
 	
 	RMutex mutex;
@@ -411,9 +411,9 @@ void CMbedContext::LoadSession()
 #endif
 }
 
-void CMbedContext::SaveSession()
+void CMbedContext::SaveSession(TBool aForce)
 {
-	if (iSessionSaved) return;
+	if (iSessionSaved && !aForce) return;
 	iSessionSaved = true;
 	
 #ifdef BEARSSL

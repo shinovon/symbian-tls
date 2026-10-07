@@ -125,7 +125,7 @@ public:
 	const TUint8* Hostname();
 	
 	void LoadSession();
-	void SaveSession();
+	void SaveSession(TBool aForce=EFalse);
 	void FlushSession();
 private:
 	static TInt ReadSessions(TSessionRecord* aRecords);
