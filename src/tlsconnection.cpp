@@ -559,7 +559,7 @@ void CTlsConnection::RecvOneOrMore(TDes8& aDesc, TRequestStatus& aStatus, TSockX
  * the same as the length of the returned aDesc.
  */
 {
-	LOG(Log::Printf(_L("CTlsConnection::RecvOneOrMore(): %d"), aDesc.MaxLength()));
+	LOG(Log::Printf(_L("CTlsConnection::RecvOneOrMore(): %d %d"), aDesc.MaxLength(), aDesc.Length()));
 	if (RecvData(aDesc, aStatus))
 		iRecvData->SetSockXfrLength(&aLen());
 }

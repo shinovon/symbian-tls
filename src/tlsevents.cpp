@@ -392,6 +392,7 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		return this;
 	}
 	TInt offset = iUserData->Length();
+	LOG(Log::Printf(_L("Read offset %d/%d"), offset, iUserMaxLength));
 	TInt res = iMbedContext.Read((unsigned char*) iUserData->Ptr() + offset, iUserMaxLength - offset);
 //	if (res == MBEDTLS_ERR_SSL_WANT_READ) {
 //		iBio.Recv(&aStatus);
@@ -414,7 +415,9 @@ CAsynchEvent* CRecvEvent::ProcessL(TRequestStatus& aStatus)
 		return this;
 	}
 #endif
-	if (res == 0 || res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || res == MBEDTLS_ERR_SSL_CONN_EOF) {
+	if (res == 0 && offset == iUserMaxLength) {
+		// do nothing
+	} else if (res == 0 || res == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || res == MBEDTLS_ERR_SSL_CONN_EOF) {
 		ret = KErrEof;
 		LOG(Log::Printf(_L("Read eof")));
 	} else if (res < 0) {
@@ -762,7 +765,20 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 #ifdef EKA2
 		iBio.iTlsConnection.iServerCert = CX509Certificate::NewL(TPtrC8(stub_der, stub_der_len));
 #else
-		// TODO link with x509.dll on runtime
+		RLibrary lib;
+		if (lib.Load(_L("x509.dll")) == KErrNone) {
+			CX509Certificate* (*func)(const TDesC8&) = (CX509Certificate* (*)(const TDesC8&)) lib.Lookup(
+#ifdef __WINS__
+				83
+#else
+				126
+#endif
+				);
+			if (func != NULL) {
+				iBio.iTlsConnection.iServerCert = func(TPtrC8(stub_der, stub_der_len));
+			}
+			lib.Close();
+		}
 #endif
 #else
 		TUint8* data = 0;
