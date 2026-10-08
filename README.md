@@ -31,7 +31,7 @@ NOT supported:
 
 On 9.1+ (EKA2), implementation uses dynamically linked [MBedTLS library port](https://github.com/shinovon/mbedtls-symbian), it supports TLS 1.2 or 1.2/1.3, in client mode only.
 
-Current limitations:
+Limitations:
 - CA certificates storage is not integrated with system, it has to be managed manually in resource path.
 - This patch does not update certificates support in system, warnings involving unsupported certificates will show stub certificate details instead.
 
