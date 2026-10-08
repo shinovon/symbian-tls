@@ -30,12 +30,8 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
 
-#ifdef EKA2
 #define KSessionDir "C:\\private\\10001842"
 #define KSessionFile "C:\\private\\10001842\\mbedtls_sessions.dat"
-#else
-#define KSessionFile "C:\\system\\data\\mbedtls_sessions.dat"
-#endif
 #endif
 
 _LIT(KSessionMutexName, "TLSSessionFile");
