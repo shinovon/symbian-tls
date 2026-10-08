@@ -313,7 +313,7 @@ TBool CMbedContext::LoadSession(void* aDataOut, size_t* aLen)
 			if (records[i].len > MAX_SESSION_SIZE)
 				break; // should not reach here, just in case
 			
-			*aLen = records[i].len;
+			if (aLen) *aLen = records[i].len;
 			memcpy(aDataOut, records[i].data, records[i].len);
 			ret = ETrue;
 			break;
@@ -514,21 +514,6 @@ TInt CMbedContext::Verify()
 	return mbedtls_ssl_get_verify_result(&ssl);
 #endif
 }
-
-//TInt CMbedContext::ExportSession(unsigned char *aData, TInt aMaxLen, TUint* aLen) {
-//    mbedtls_ssl_session exported_session;
-//    mbedtls_ssl_session_init(&exported_session);
-//    int ret = mbedtls_ssl_get_session(ssl, &exported_session);
-//    if (ret != 0) goto exit;
-//	ret = mbedtls_ssl_session_save(&exported_session, aData, static_cast<unsigned int>(aMaxLen), aLen);
-//exit:
-//	mbedtls_ssl_session_free(&exported_session);
-//	return ret;
-//}
-
-//TInt CMbedContext::LoadSession(const unsigned char *aData, TInt aLen) {
-//	return -1;
-//}
 
 TInt CMbedContext::Read(unsigned char* aData, TInt aLen)
 {
