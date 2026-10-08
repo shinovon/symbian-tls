@@ -18,21 +18,16 @@
 #define MBEDTLS_ERR_SSL_CONN_EOF -0x7280
 #define MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY -0x7880
 
-#ifdef EKA2
-#define KSessionDir "C:\\private\\10001842"
-#define KSessionFile "C:\\private\\10001842\\bearssl_sessions.dat"
-#else
 #define KSessionFile "C:\\system\\data\\bearssl_sessions.dat"
-#endif
 #else
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
 
-#define KSessionDir "C:\\private\\10001842"
-#define KSessionFile "C:\\private\\10001842\\mbedtls_sessions.dat"
+#define KSessionFile "C:\\system\\data\\mbedtls_sessions.dat"
 #endif
+#define KSessionDir "C:\\system\\data"
 
 _LIT(KSessionMutexName, "TLSSessionFile");
 
