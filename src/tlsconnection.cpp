@@ -560,6 +560,19 @@ void CTlsConnection::RecvOneOrMore(TDes8& aDesc, TRequestStatus& aStatus, TSockX
  */
 {
 	LOG(Log::Printf(_L("CTlsConnection::RecvOneOrMore(): %d %d"), aDesc.MaxLength(), aDesc.Length()));
+#ifndef EKA2
+	// uiq2.1 sdk - 7.0, reports 1.2.388
+	// s60(v2.0, v2.1 fp1, v2.6 fp2), s80v2, 7710(s90v1.1) sdk - 7.0s, reports 1.2.422
+	// s60v2.6 fp2 beta sdk - 8.0a, reports 1.2.432
+	// s60v2.6 fp2 sdk - 8.0a, reports 1.2.436
+	// s60v2.8 fp3 sdk - 8.1a, reports 1.2.456
+	TVersion version = User::Version();
+	if (version.iMinor == 1 && version.iMajor == 2 && version.iBuild < 432) {
+		// workaround for symbian 7.0 & 7.0s
+		// java in these versions lack TDes8::Zero() call in CMIDSecureConnection::ProcessRead()
+		aDesc.Zero();
+	}
+#endif
 	if (RecvData(aDesc, aStatus))
 		iRecvData->SetSockXfrLength(&aLen());
 }
@@ -978,7 +991,7 @@ TBool CTlsConnection::RecvData(TDes8& aDesc, TRequestStatus& aStatus)
 		return EFalse;
 	}
 	if (iReceivingData) {
-		LOG(Log::Printf(_L("CTlsConnection::RecvOneOrMore() Busy")));
+		LOG(Log::Printf(_L("CTlsConnection::RecvData() Busy")));
 		User::RequestComplete(pStatus, KErrInUse);
 		return EFalse;
 	}
