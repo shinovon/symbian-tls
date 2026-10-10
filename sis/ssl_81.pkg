@@ -1,0 +1,11 @@
+&EN
+
+#{"TLS 1.2 patch for 8.1"},(0x10292B6D),1,22,0
+
+(0x102032BD), 0, 0, 0, {"Series60ProductID"}
+
+if not exists("z:\system\install\Series60v2.8.sis")
+	"notsupported.txt"-"", FT, TE
+else
+	"G:\Progs\Symbian\S60_2nd_FP3\Epoc32\release\armi\urel\ssl.dll"-"c:\system\libs\ssl.dll"
+endif

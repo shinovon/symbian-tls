@@ -1,0 +1,14 @@
+&EN
+
+#{"TLS 1.2 patch for 8.0"},(0x10292B6D),1,22,0
+
+(0x10200BAB), 0, 0, 0, {"Series60ProductID"}
+
+if not exists("z:\system\libs\ssladaptor.dll")
+	"notsupported.txt"-"", FT, TE
+elseif not exists("z:\system\install\Series60v2.6.sis")
+	"notsupported.txt"-"", FT, TE
+else
+	"$(EPOCROOT)Epoc32\release\armi\urel\ssladapto2.dll"-"c:\system\libs\ssladapto2.dll"
+	"securesocket.dll"-"c:\system\libs\securesocket.dll"
+endif

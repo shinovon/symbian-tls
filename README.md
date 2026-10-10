@@ -13,6 +13,7 @@ Supported software platforms:
 - S60 3rd Edition and its FPs (9.1-9.3)
 - UIQ 3 (9.1)
 - S60 2nd Edition FP3 (N70/N72/N90, 8.1a)
+- S60 2nd Edition FP2 (6630/6680, 8.0a)
 - S60 2nd Edition Initial Release and FP1 (6600/6260/6620/3230/7610, 7.0s)
 - S80 2nd Edition (9500/9300, 7.0s)
 - S90 (7700/7710, 7.0s)
@@ -21,8 +22,6 @@ Unknown (theoretically should be supported, but no one tested):
 - UIQ 2 (7.0)
 
 NOT supported:
-
-- S60 2nd Edition FP2 (6630/6680, 8.0a) - should work but doesn't, no idea why.
 - S60 1st Edition (6.1)
 - S80 1st Edition (6.0)
 - Anything earlier

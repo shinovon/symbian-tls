@@ -1,0 +1,15 @@
+&EN
+
+#{"TLS 1.2 patch for 7.0/7.0s"},(0x10292B6D),1,22,0
+
+(0x100002c3), 0, 0, 0, {"Standard C Library"}
+
+if not exists("z:\system\libs\ssladaptor.dll")
+	"notsupported.txt"-"", FT, TE
+elseif exists("z:\system\install\Series60v2.6.sis")
+	"notsupported.txt"-"", FT, TE
+elseif exists("z:\system\install\Series60v2.0.sis")
+	"$(EPOCROOT)Epoc32\release\thumb\urel\ssladaptor.dll"-"c:\system\libs\ssladaptor.dll"
+else
+	"$(EPOCROOT)Epoc32\release\armi\urel\ssladaptor.dll"-"c:\system\libs\ssladaptor.dll"
+endif

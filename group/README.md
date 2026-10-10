@@ -4,6 +4,7 @@
 - comsdbgutil.dll is linked on runtime in debug build, due to similar reason.
 - EKA1 version (ssl_bearssl.mmp, ssladaptor.mmp) uses statically linked bearssl.
 - ssl_bearssl.mmp can be used on EKA2 if you really want, rename it to ssl.dll after compiling.
+- on 8.0a instead of shadowing ssladaptor.dll, securesocket.dll is shadowed with patched runtime linkage to ssladapto2.dll
 
 # SSL API changes between releases
 
@@ -48,8 +49,6 @@ in `MSSLSocketNotify`
 - ssl.h replaces `void SSLDeliver(const TDesC8&)`
   with `void SSLDeliver(const TDesC8&, TUint)`
   in `MSSLSocketNotify`
-
-**currently does not work on hardware**
 
 ## 8.1a (S60v2.8)
 - old ssl.dll removed, ssladaptor.dll is now new ssl.dll

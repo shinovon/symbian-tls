@@ -1,0 +1,17 @@
+TARGET ssladapto2.dll
+DEFFILE ssladaptor.def
+UID 0x101f35f0 0x101f35ef
+
+#include "newtls.mmh"
+
+SYSTEMINCLUDE \epoc32\include
+SYSTEMINCLUDE \epoc32\include\libc
+SYSTEMINCLUDE \epoc32\include\bearssl
+
+LIBRARY estlib.lib
+
+STATICLIBRARY bearssl.lib
+
+MACRO BEARSSL
+MACRO NO_VERIFY
+MACRO SSLADAPTOR
