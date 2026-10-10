@@ -32,8 +32,9 @@ in `MSSLSocketNotify`
 - ssl.h renames `void Process(const TDesC8&)`
 to `void ProcessL(const TDesC8&)`
 in `CSSLProviderBase`
-- ssladaptor.dll added with 2 exports: `CSslAdaptor::NewL(RSocket&, TDesC16 const&)`, `UnloadDll`, which is loaded dynamically in securesocket.dll (currently only supporting this)
-- `KSoSecureSocket` is deprecated, securesocket.dll api replaced it
+- ssladaptor.dll added with 2 exports: `CSslAdaptor::NewL(RSocket&, TDesC16 const&)`, `UnloadDll`, linked on runtime in securesocket.dll
+- `KSoSecureSocket` is deprecated, it was replaced with securesocket.dll api
+- ssl.dll is still there, but no longer accessed directly, ssladaptor.dll is the layer between securesocket.dll and ssl.dll
 
 **not tested on uiq2**
 
@@ -51,8 +52,8 @@ in `MSSLSocketNotify`
   in `MSSLSocketNotify`
 
 ## 8.1a (S60v2.8)
-- old ssl.dll removed, ssladaptor.dll is now new ssl.dll
-- removed 2nd export
+- ssladaptor.dll removed, ssl.dll is completely rewritten and now linked on runtime by securesocket.dll directly
+- removed "unload dll" 2nd ordinal export
 
 ## 9.1
 - 2nd ssl.dll export added: `CTlsConnection::UnloadDll(TAny*)`
