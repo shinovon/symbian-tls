@@ -767,6 +767,7 @@ CAsynchEvent* CHandshakeEvent::ProcessL(TRequestStatus& aStatus)
 #else
 		RLibrary lib;
 		if (lib.Load(_L("x509.dll")) == KErrNone) {
+			// ordinals taken from s80v2 sdk, assuming it stays same to 8.1a because there is no x509.lib in newer eka1 sdks
 			CX509Certificate* (*func)(const TDesC8&) = (CX509Certificate* (*)(const TDesC8&)) lib.Lookup(
 #ifdef __WINS__
 				83
